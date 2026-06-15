@@ -13,24 +13,35 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError('Email atau password salah. Hubungi admin jika akun bermasalah.')
+
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    if (authError) {
+      setError('Email atau password salah.')
       setLoading(false)
       return
     }
-    // Check if agent is active
-    const { data: agent } = await supabase
+
+    // Check agent is_active — query langsung pakai user_id dari session
+    const { data: agent, error: agentError } = await supabase
       .from('agents')
-      .select('is_active')
+      .select('is_active, full_name')
       .eq('user_id', data.user.id)
       .single()
-    if (!agent?.is_active) {
+
+    if (agentError || !agent) {
+      await supabase.auth.signOut()
+      setError('Akun agen tidak ditemukan. Hubungi admin.')
+      setLoading(false)
+      return
+    }
+
+    if (!agent.is_active) {
       await supabase.auth.signOut()
       setError('Akun ini telah dinonaktifkan. Hubungi admin.')
       setLoading(false)
       return
     }
+
     navigate('/app/dashboard')
   }
 
@@ -78,7 +89,7 @@ export default function LoginPage() {
 
 const styles = {
   bg: { minHeight:'100vh', background:'#f5f5f5', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', fontFamily:'system-ui,-apple-system,sans-serif' },
-  card: { background:'#fff', borderRadius:'12px', padding:'40px', width:'100%', maxWidth:'400px', boxShadow:'0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)' },
+  card: { background:'#fff', borderRadius:'12px', padding:'40px', width:'100%', maxWidth:'400px', boxShadow:'0 1px 3px rgba(0,0,0,0.08)' },
   logo: { display:'flex', alignItems:'center', gap:'12px', marginBottom:'32px' },
   logoMark: { width:'40px', height:'40px', background:'#C0392B', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'700', fontSize:'16px' },
   logoText: { fontSize:'18px', fontWeight:'600', color:'#1a1a1a' },
