@@ -14,34 +14,16 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
     if (authError) {
       setError('Email atau password salah.')
       setLoading(false)
       return
     }
 
-    // Check agent is_active — query langsung pakai user_id dari session
-    const { data: agent, error: agentError } = await supabase
-      .from('agents')
-      .select('is_active, full_name')
-      .eq('user_id', data.user.id)
-      .single()
-
-    if (agentError || !agent) {
-      await supabase.auth.signOut()
-      setError('Akun agen tidak ditemukan. Hubungi admin.')
-      setLoading(false)
-      return
-    }
-
-    if (!agent.is_active) {
-      await supabase.auth.signOut()
-      setError('Akun ini telah dinonaktifkan. Hubungi admin.')
-      setLoading(false)
-      return
-    }
-
+    // Login berhasil — langsung ke dashboard
+    // Dashboard & AuthGuard akan handle pengecekan is_active
     navigate('/app/dashboard')
   }
 
@@ -55,31 +37,14 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} style={styles.form}>
           <div style={styles.field}>
             <label style={styles.label}>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              style={styles.input}
-              placeholder="email@domain.com"
-              required
-              autoFocus
-            />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} placeholder="email@domain.com" required autoFocus />
           </div>
           <div style={styles.field}>
             <label style={styles.label}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              style={styles.input}
-              placeholder="••••••••"
-              required
-            />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} placeholder="••••••••" required />
           </div>
           {error && <div style={styles.error}>{error}</div>}
-          <button type="submit" disabled={loading} style={styles.btn}>
-            {loading ? 'Masuk...' : 'Masuk'}
-          </button>
+          <button type="submit" disabled={loading} style={styles.btn}>{loading ? 'Masuk...' : 'Masuk'}</button>
         </form>
         <p style={styles.footer}>Butuh akses? Hubungi admin tim Anda.</p>
       </div>
