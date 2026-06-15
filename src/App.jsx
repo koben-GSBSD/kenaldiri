@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import SurveyTypePage from './pages/SurveyTypePage'
 import NewSurveyPage from './pages/NewSurveyPage'
 import ResultDetailPage from './pages/ResultDetailPage'
 import ProductsPage from './pages/ProductsPage'
@@ -19,7 +20,8 @@ export default function App() {
         <Route path="/app" element={<AuthGuard />}>
           <Route index element={<Navigate to="/app/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="survey/new" element={<NewSurveyPage />} />
+          <Route path="survey/new" element={<SurveyTypePage />} />
+          <Route path="survey/new/form" element={<NewSurveyPage />} />
           <Route path="survey/:id" element={<ResultDetailPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="admin" element={<AdminPage />} />
