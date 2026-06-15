@@ -8,6 +8,29 @@ function generateToken() {
   return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
+const SURVEY_META = {
+  selling: {
+    title: 'ProfilKu Finansial',
+    subtitle: 'Kenali Tipe Kepribadian Keuangan Nasabah',
+    tag: 'Untuk calon nasabah',
+    tagColor: '#3C3489',
+    tagBg: '#EEEDFE',
+    color: '#7F77DD',
+    prospectLabel: 'nasabah',
+    waMsg: (name, url) => `Halo ${name}, berikut link survey kepribadian finansial dari saya. Mohon diisi dalam 1 jam ya 🙏\n\n${url}`,
+  },
+  recruiting: {
+    title: 'ProfilKu Peluang',
+    subtitle: 'Temukan Potensi Penghasilan Baru Calon Agen',
+    tag: 'Untuk calon agen',
+    tagColor: '#085041',
+    tagBg: '#E1F5EE',
+    color: '#1D9E75',
+    prospectLabel: 'calon agen',
+    waMsg: (name, url) => `Halo ${name}, saya punya kuis kepribadian karir yang menarik. Cuma 10 menit, coba isi ya! 🙂\n\n${url}`,
+  },
+}
+
 export default function NewSurveyPage() {
   const [agent, setAgent] = useState(null)
   const [form, setForm] = useState({ name: '', dob: '', job: '', smoker: false })
@@ -16,23 +39,9 @@ export default function NewSurveyPage() {
   const [copied, setCopied] = useState(false)
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const surveyType = searchParams.get('type') || 'selling'
 
-  const typeConfig = {
-    selling: {
-      label: 'ProfilKu Finansial',
-      color: '#7F77DD',
-      colorLight: '#EEEDFE',
-      desc: 'Survey kepribadian finansial untuk nasabah',
-    },
-    recruiting: {
-      label: 'ProfilKu Peluang',
-      color: '#1D9E75',
-      colorLight: '#E1F5EE',
-      desc: 'Survey peluang karir untuk calon agen',
-    },
-  }
-  const tc = typeConfig[surveyType]
+  const surveyType = searchParams.get('type') === 'recruiting' ? 'recruiting' : 'selling'
+  const meta = SURVEY_META[surveyType]
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -45,6 +54,7 @@ export default function NewSurveyPage() {
     setLoading(true)
     const token = generateToken()
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+
     const { data, error } = await supabase.from('survey_links').insert({
       agent_id: agent.id,
       token,
@@ -52,12 +62,14 @@ export default function NewSurveyPage() {
       prospect_dob: form.dob,
       prospect_job: form.job.trim(),
       prospect_smoker: form.smoker,
+      survey_type: surveyType,
       status: 'pending',
       expires_at: expiresAt,
-      survey_type: surveyType,
     }).select().single()
+
     if (error) { alert('Gagal membuat link. Coba lagi.'); setLoading(false); return }
-    setResult({ ...data, surveyUrl: `${window.location.origin}/s/${token}` })
+    const surveyUrl = `${window.location.origin}/s/${token}`
+    setResult({ ...data, surveyUrl })
     setLoading(false)
   }
 
@@ -68,8 +80,7 @@ export default function NewSurveyPage() {
   }
 
   function shareWA() {
-    const typeLabel = surveyType === 'recruiting' ? 'karir dan peluang penghasilan' : 'kepribadian finansial'
-    const msg = encodeURIComponent(`Halo ${form.name}, ada survey singkat tentang ${typeLabel} yang menarik untuk diisi. Hanya 10-15 menit dan hasilnya cukup mengejutkan! 😊\n\n${result.surveyUrl}`)
+    const msg = encodeURIComponent(meta.waMsg(form.name, result.surveyUrl))
     window.open(`https://wa.me/?text=${msg}`, '_blank')
   }
 
@@ -78,19 +89,24 @@ export default function NewSurveyPage() {
       <AppShell agent={agent}>
         <div style={s.wrap}>
           <div style={s.successCard}>
-            <div style={s.successIcon}>✓</div>
-            <span style={{ ...s.typeTag, background: tc.colorLight, color: tc.color }}>{tc.label}</span>
+            <div style={{ ...s.successIcon, background: meta.tagBg }}>✓</div>
             <h2 style={s.successTitle}>Link survey berhasil dibuat!</h2>
-            <p style={s.successSub}>Untuk nasabah: <strong>{result.prospect_name}</strong></p>
-            <div style={s.linkBox}><code style={s.linkText}>{result.surveyUrl}</code></div>
-            <div style={s.expireNote}>Link kedaluwarsa dalam <strong>1 jam</strong> — {new Date(result.expires_at).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' })}</div>
+            <p style={s.successSub}>
+              Untuk {meta.prospectLabel}: <strong>{result.prospect_name}</strong>
+            </p>
+            <div style={s.linkBox}>
+              <code style={s.linkText}>{result.surveyUrl}</code>
+            </div>
+            <div style={s.expireNote}>
+              Link kedaluwarsa dalam <strong>1 jam</strong> — {new Date(result.expires_at).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' })}
+            </div>
             <div style={s.btnRow}>
               <button onClick={shareWA} style={s.waBtn}>Kirim via WhatsApp</button>
               <button onClick={copyLink} style={s.copyBtn}>{copied ? 'Tersalin!' : 'Salin Link'}</button>
             </div>
             <div style={s.btnRow2}>
               <button onClick={() => navigate('/app/dashboard')} style={s.backBtn}>Kembali ke Dashboard</button>
-              <button onClick={() => { setResult(null); setForm({ name:'', dob:'', job:'', smoker:false }) }} style={s.newBtn}>Buat Link Baru</button>
+              <button onClick={() => { setResult(null); setForm({ name:'', dob:'', job:'', smoker:false }) }} style={{ ...s.newBtn, background: meta.color }}>Buat Link Baru</button>
             </div>
           </div>
         </div>
@@ -101,17 +117,16 @@ export default function NewSurveyPage() {
   return (
     <AppShell agent={agent}>
       <div style={s.wrap}>
-        <button onClick={() => navigate('/app/survey/new')} style={s.backLink}>← Ganti jenis survey</button>
-        <div style={s.topBadge}>
-          <span style={{ ...s.typeTag, background: tc.colorLight, color: tc.color }}>{tc.label}</span>
-          <span style={s.typeDesc}>{tc.desc}</span>
+        <div style={s.pageHeader}>
+          <button onClick={() => navigate('/app/survey/new')} style={s.backLink}>← Ganti jenis survey</button>
+          <span style={{ ...s.typeBadge, color: meta.tagColor, background: meta.tagBg }}>{meta.tag}</span>
         </div>
-        <h1 style={s.title}>Data Nasabah</h1>
-        <p style={s.subtitle}>Isi data nasabah terlebih dahulu, lalu kirimkan link survey kepada mereka.</p>
+        <h1 style={s.title}>{meta.title}</h1>
+        <p style={s.subtitle}>{meta.subtitle}</p>
         <div style={s.formCard}>
           <form onSubmit={handleSubmit} style={s.form}>
             <div style={s.field}>
-              <label style={s.label}>Nama lengkap *</label>
+              <label style={s.label}>Nama lengkap {meta.prospectLabel} *</label>
               <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} style={s.input} placeholder="Contoh: Budi Santoso" required />
             </div>
             <div style={s.field}>
@@ -120,14 +135,18 @@ export default function NewSurveyPage() {
             </div>
             <div style={s.field}>
               <label style={s.label}>Pekerjaan *</label>
-              <input value={form.job} onChange={e => setForm({...form, job: e.target.value})} style={s.input} placeholder="Contoh: Wiraswasta, Karyawan swasta, PNS..." required />
+              <input value={form.job} onChange={e => setForm({...form, job: e.target.value})} style={s.input} placeholder="Contoh: Karyawan swasta, Wiraswasta..." required />
             </div>
-            <div style={s.checkField}>
-              <input type="checkbox" id="smoker" checked={form.smoker} onChange={e => setForm({...form, smoker: e.target.checked})} style={s.checkbox} />
-              <label htmlFor="smoker" style={s.checkLabel}>Nasabah merokok</label>
+            {surveyType === 'selling' && (
+              <div style={s.checkField}>
+                <input type="checkbox" id="smoker" checked={form.smoker} onChange={e => setForm({...form, smoker: e.target.checked})} style={s.checkbox} />
+                <label htmlFor="smoker" style={s.checkLabel}>Perokok aktif</label>
+              </div>
+            )}
+            <div style={s.note}>
+              Link survey akan aktif selama <strong>1 jam</strong> setelah dibuat.
             </div>
-            <div style={s.note}>Link survey akan aktif selama <strong>1 jam</strong> setelah dibuat.</div>
-            <button type="submit" disabled={loading} style={{ ...s.submitBtn, background: tc.color }}>
+            <button type="submit" disabled={loading} style={{ ...s.submitBtn, background: meta.color }}>
               {loading ? 'Membuat link...' : 'Buat Link Survey'}
             </button>
           </form>
@@ -139,12 +158,11 @@ export default function NewSurveyPage() {
 
 const s = {
   wrap: { maxWidth:'520px' },
-  backLink: { background:'none', border:'none', color:'#888', fontSize:'13px', cursor:'pointer', padding:'0 0 12px', display:'block' },
-  topBadge: { display:'flex', alignItems:'center', gap:'10px', marginBottom:'12px' },
-  typeTag: { fontSize:'12px', fontWeight:'600', padding:'4px 12px', borderRadius:'99px' },
-  typeDesc: { fontSize:'13px', color:'#888' },
+  pageHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'16px' },
+  backLink: { background:'none', border:'none', color:'#888', fontSize:'13px', cursor:'pointer', padding:0 },
+  typeBadge: { fontSize:'11px', fontWeight:'600', padding:'3px 10px', borderRadius:'99px', letterSpacing:'0.04em' },
   title: { fontSize:'22px', fontWeight:'700', color:'#1a1a1a', marginBottom:'6px' },
-  subtitle: { fontSize:'14px', color:'#888', marginBottom:'20px' },
+  subtitle: { fontSize:'13px', color:'#888', marginBottom:'20px' },
   formCard: { background:'#fff', borderRadius:'12px', padding:'28px', border:'1px solid #eee' },
   form: { display:'flex', flexDirection:'column', gap:'20px' },
   field: { display:'flex', flexDirection:'column', gap:'6px' },
@@ -156,8 +174,8 @@ const s = {
   note: { background:'#FEF3C7', borderRadius:'8px', padding:'12px', fontSize:'13px', color:'#92400E' },
   submitBtn: { padding:'12px', color:'#fff', border:'none', borderRadius:'8px', fontSize:'14px', fontWeight:'600', cursor:'pointer' },
   successCard: { background:'#fff', borderRadius:'12px', padding:'40px', border:'1px solid #eee', textAlign:'center' },
-  successIcon: { width:'56px', height:'56px', background:'#D1FAE5', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'24px', color:'#059669', margin:'0 auto 12px' },
-  successTitle: { fontSize:'20px', fontWeight:'700', color:'#1a1a1a', margin:'12px 0 8px' },
+  successIcon: { width:'56px', height:'56px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'24px', color:'#059669', margin:'0 auto 16px' },
+  successTitle: { fontSize:'20px', fontWeight:'700', color:'#1a1a1a', marginBottom:'8px' },
   successSub: { fontSize:'14px', color:'#888', marginBottom:'20px' },
   linkBox: { background:'#f5f5f5', borderRadius:'8px', padding:'14px 16px', marginBottom:'12px', wordBreak:'break-all' },
   linkText: { fontSize:'13px', color:'#333', fontFamily:'monospace' },
@@ -167,5 +185,5 @@ const s = {
   waBtn: { padding:'10px 20px', background:'#25D366', color:'#fff', border:'none', borderRadius:'8px', fontSize:'14px', fontWeight:'600', cursor:'pointer' },
   copyBtn: { padding:'10px 20px', background:'#f0f0f0', color:'#333', border:'1px solid #ddd', borderRadius:'8px', fontSize:'14px', cursor:'pointer' },
   backBtn: { padding:'10px 20px', background:'#f0f0f0', color:'#333', border:'1px solid #ddd', borderRadius:'8px', fontSize:'14px', cursor:'pointer' },
-  newBtn: { padding:'10px 20px', background:'#C0392B', color:'#fff', border:'none', borderRadius:'8px', fontSize:'14px', cursor:'pointer' },
+  newBtn: { padding:'10px 20px', color:'#fff', border:'none', borderRadius:'8px', fontSize:'14px', cursor:'pointer' },
 }
