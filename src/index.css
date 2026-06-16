@@ -56,3 +56,39 @@ input:focus, button:focus { outline: 2px solid #7F77DD; outline-offset: 1px; }
 
 /* Remove horizontal scroll globally */
 html, body { overflow-x: hidden; max-width: 100vw; }
+
+/* ── MOBILE IMAGE FIX ── */
+@media (max-width: 640px) {
+  /* Survey type card images - proporsional di mobile */
+  .kd-type-grid button { width: 100% !important; }
+  .kd-type-img {
+    height: 180px !important;
+    object-fit: cover !important;
+    background-size: cover !important;
+    background-position: center top !important;
+  }
+  /* Halaman nasabah survey */
+  .kd-question-card { border-radius: 12px !important; }
+  /* Admin form mobile */
+  .kd-admin-field-row { flex-direction: column !important; }
+  /* Stats row mobile - smaller */
+  .kd-stats-grid {
+    gap: 8px !important;
+  }
+  .kd-stats-grid .kd-stat-value { font-size: 20px !important; }
+}
+
+/* Fix image proportional in SurveyTypePage */
+.survey-cover-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+  display: block;
+}
+@media (max-width: 640px) {
+  .survey-cover-img {
+    height: 160px;
+  }
+}
