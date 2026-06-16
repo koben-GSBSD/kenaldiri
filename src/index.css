@@ -1,3 +1,58 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: system-ui, -apple-system, sans-serif; background: #f7f7f7; color: #1a1a1a; }
 input:focus, button:focus { outline: 2px solid #7F77DD; outline-offset: 1px; }
+
+/* ── GLOBAL MOBILE RESPONSIVE ── */
+* { box-sizing: border-box; }
+
+/* Dashboard stats grid */
+@media (max-width: 600px) {
+  .kd-stats-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
+  .kd-stat-value { font-size: 22px !important; }
+}
+
+/* Survey cards */
+@media (max-width: 600px) {
+  .kd-survey-card { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+  .kd-card-right { align-self: flex-end !important; }
+  .kd-filter-row { flex-wrap: wrap !important; gap: 6px !important; }
+  .kd-filter-btn { font-size: 11px !important; padding: 5px 10px !important; }
+}
+
+/* Survey type selection */
+@media (max-width: 640px) {
+  .kd-type-grid { grid-template-columns: 1fr !important; }
+  .kd-type-img { height: 160px !important; }
+}
+
+/* New survey form */
+@media (max-width: 640px) {
+  .kd-field-row { grid-template-columns: 1fr !important; }
+  .kd-form-card { padding: 20px !important; }
+}
+
+/* Admin panel */
+@media (max-width: 640px) {
+  .kd-admin-field-row { grid-template-columns: 1fr !important; }
+  .kd-admin-btn-row { flex-direction: column !important; }
+}
+
+/* Products grid */
+@media (max-width: 640px) {
+  .kd-products-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Result detail */
+@media (max-width: 640px) {
+  .kd-prod-grid { grid-template-columns: 1fr !important; }
+  .kd-prod-btn-row { flex-direction: column !important; }
+}
+
+/* Public survey pages - already mobile-first, ensure no overflow */
+@media (max-width: 480px) {
+  .kd-survey-wrap { padding: 12px !important; }
+  .kd-question-card { padding: 20px !important; }
+}
+
+/* Remove horizontal scroll globally */
+html, body { overflow-x: hidden; max-width: 100vw; }
