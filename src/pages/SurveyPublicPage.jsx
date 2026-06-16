@@ -71,12 +71,12 @@ export default function SurveyPublicPage() {
     setStatus('submitting')
     let result
     if (isCareer) {
-      result = calculateCareerScore(finalAnswers)
+      result = calculateCareerScore(finalAnswers, introData.dob)
       await supabase.from('survey_responses').insert({
         link_id: link.id,
         answers: finalAnswers,
         personality_type: result.profile_type,
-        shio: '-',
+        shio: result.shio || '-',
         readiness_score: result.openness_score,
         primary_product: result.need_level,
         secondary_product: result.profile_type,
