@@ -5,9 +5,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,       // simpan di localStorage, tidak hilang saat tab tutup
-    autoRefreshToken: true,     // auto-refresh token sebelum expired
+    persistSession: true,       // simpan di localStorage
+    autoRefreshToken: true,     // auto-refresh sebelum expired (default 1 jam → refresh terus)
     detectSessionInUrl: true,
-    storageKey: 'kenaldiri-session', // key unik agar tidak konflik
+    storageKey: 'kenaldiri-session',
   }
 })

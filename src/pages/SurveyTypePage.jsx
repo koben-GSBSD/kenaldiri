@@ -69,7 +69,7 @@ const s = {
   sub: { fontSize:'14px', color:'#888' },
   grid: { display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:'20px' },
   card: { background:'#fff', borderRadius:'12px', border:'1px solid #eee', cursor:'pointer', textAlign:'left', padding:'0', overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.06)', transition:'transform 0.15s, box-shadow 0.15s' },
-  cardImg: { width:'100%', height:'200px', backgroundSize:'cover', backgroundPosition:'center', background:'#f0f0f0' },
+  cardImg: { width:'100%', height:'220px', backgroundSize:'cover', backgroundPosition:'top center', background:'#f0f0f0' },
   cardBody: { padding:'18px' },
   tag: { display:'inline-block', fontSize:'11px', fontWeight:'600', padding:'3px 10px', borderRadius:'99px', marginBottom:'8px', letterSpacing:'0.04em' },
   cardTitle: { fontSize:'17px', fontWeight:'700', color:'#1a1a1a', margin:'0 0 3px' },
