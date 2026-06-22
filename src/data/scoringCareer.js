@@ -1,11 +1,17 @@
 import { CAREER_QUESTIONS } from './questionsCareer.js'
+import { getShio, getShioByName } from '../lib/shio.js'
 
 // 4 profil hasil survey karir
 // Dirancang agar SEMUA profil mengarah ke peluang sales/konsultan dengan cara berbeda
-const CAREER_PROFILES = {
+//
+// Catatan penamaan (atas arahan Koben): hanya nama tampilan profil yang dibuat
+// dalam Bahasa Inggris. Slug internal (type) TIDAK diubah supaya kompatibel
+// dengan data yang sudah tersimpan di database. Semua deskripsi tetap
+// menggunakan Bahasa Indonesia yang santai dan mudah dimengerti.
+export const CAREER_PROFILES = {
   connector: {
     type: 'connector',
-    label: 'Si Penghubung Alami',
+    label: 'The Connector',
     icon: '🤝',
     tagline: 'Bakat terbesarmu adalah membuat orang merasa dipahami',
     description: `Kamu adalah tipe orang yang secara alami membangun kepercayaan dengan cepat. Orang-orang di sekitarmu nyaman berbagi cerita, meminta saran, dan mempercayai rekomendasimu — bukan karena kamu memaksakan diri, tapi karena kamu memang tulus mendengarkan dan peduli.
@@ -21,7 +27,7 @@ Yang menarik: orang seperti kamu justru paling efektif dalam peran di mana keper
   },
   achiever: {
     type: 'achiever',
-    label: 'Si Pencetak Hasil',
+    label: 'The Achiever',
     icon: '🎯',
     tagline: 'Kamu termotivasi oleh hasil nyata, bukan sekadar proses',
     description: `Kamu bukan tipe yang puas dengan rutinitas tanpa arah. Ada dorongan kuat dalam dirimu untuk melihat angka yang bergerak, target yang tercapai, dan dampak yang nyata dari apa yang kamu kerjakan.
@@ -37,7 +43,7 @@ Orang seperti kamu biasanya tidak perlu dimotivasi dari luar. Yang dibutuhkan ad
   },
   empath: {
     type: 'empath',
-    label: 'Si Pembawa Makna',
+    label: 'The Empath',
     icon: '💡',
     tagline: 'Kamu ingin pekerjaan yang terasa bermakna, bukan sekadar menghasilkan',
     description: `Di tengah tekanan finansial sehari-hari, kamu tetap menjaga nilai penting: pekerjaan harus bermakna. Bukan hanya tentang angka, tapi tentang dampak nyata pada kehidupan orang lain.
@@ -53,7 +59,7 @@ Yang sering tidak disadari tipe seperti kamu: ada karir yang bisa memberikan ked
   },
   explorer: {
     type: 'explorer',
-    label: 'Si Penjelajah Peluang',
+    label: 'The Explorer',
     icon: '🧭',
     tagline: 'Kamu punya naluri kuat untuk tidak berhenti di zona nyaman',
     description: `Ada bagian dari dirimu yang selalu mencari — peluang baru, cara yang lebih baik, atau sesuatu yang memberikan lebih dari yang sudah ada. Kamu bukan tipe yang puas dengan "cukup" jika ada kemungkinan untuk "lebih baik."
@@ -67,6 +73,108 @@ Tipe sepertimu paling cepat berkembang ketika menemukan lingkungan yang mengharg
       ? 'Naluri eksplorasimu sudah aktif. Langkah berikutnya adalah mendapatkan lebih banyak informasi.'
       : 'Energimu untuk menjelajahi peluang baru, dikombinasikan dengan kesiapan bertindak, adalah formula yang tepat untuk memulai sesuatu yang nyata.',
   },
+}
+
+function getAnswerText(qid, answerId) {
+  const q = CAREER_QUESTIONS.find(q => q.id === qid)
+  const opt = q?.options.find(o => o.id === answerId)
+  return opt?.text || ''
+}
+
+// === Career Readiness Index (CRI) — skala 0–100 ===
+// Mirroring FRS di survey finansial: setiap komponen ditautkan ke pertanyaan
+// spesifik supaya agen bisa menjelaskan ke prospek kenapa skornya segini.
+function calculateCRI(answers) {
+  const breakdown = []
+
+  // 1) Keterbukaan terhadap peluang baru (cq24, skala 1-5) -> 0-25
+  const opennessVal = parseInt(answers.cq24) || 1
+  const opennessPts = Math.round(((opennessVal - 1) / 4) * 25)
+  breakdown.push({
+    key: 'openness',
+    label: 'Keterbukaan Peluang Baru',
+    question: 'Seberapa terbuka terhadap peluang karir atau penghasilan baru?',
+    answer: getAnswerText('cq24', answers.cq24),
+    points: opennessPts,
+    max: 25,
+  })
+
+  // 2) Tekanan/kebutuhan finansial (cq3) -> 0-25
+  const pressureMap = { a: 0, b: 8, c: 16, d: 25 }
+  const pressurePts = pressureMap[answers.cq3] ?? 0
+  breakdown.push({
+    key: 'financial_pressure',
+    label: 'Tekanan Kebutuhan Finansial',
+    question: 'Kalau gaji tiba-tiba berhenti 2 bulan, bagaimana kondisi keuangan?',
+    answer: getAnswerText('cq3', answers.cq3),
+    points: pressurePts,
+    max: 25,
+  })
+
+  // 3) Orientasi aksi terhadap peluang (cq19) -> 0-20
+  const actionMap = { a: 20, b: 12, c: 6, d: 0 }
+  const actionPts = actionMap[answers.cq19] ?? 0
+  breakdown.push({
+    key: 'action_orientation',
+    label: 'Orientasi Aksi',
+    question: 'Reaksi terhadap tawaran peluang bisnis sampingan yang meyakinkan?',
+    answer: getAnswerText('cq19', answers.cq19),
+    points: actionPts,
+    max: 20,
+  })
+
+  // 4) Kenyamanan sosial / sales aptitude (cq11) -> 0-15
+  const socialMap = { a: 15, b: 10, c: 5, d: 0 }
+  const socialPts = socialMap[answers.cq11] ?? 0
+  breakdown.push({
+    key: 'people_aptitude',
+    label: 'Kenyamanan Bertemu Orang Baru',
+    question: 'Seberapa nyaman memulai percakapan dengan orang yang belum dikenal?',
+    answer: getAnswerText('cq11', answers.cq11),
+    points: socialPts,
+    max: 15,
+  })
+
+  // 5) Mindset penghasilan tidak terbatas (cq16) -> 0-15
+  const incomeMindsetMap = { a: 0, b: 15, c: 10, d: 15 }
+  const incomeMindsetPts = incomeMindsetMap[answers.cq16] ?? 0
+  breakdown.push({
+    key: 'income_mindset',
+    label: 'Mindset Penghasilan Fleksibel',
+    question: 'Sistem penghasilan yang paling menarik menurutmu?',
+    answer: getAnswerText('cq16', answers.cq16),
+    points: incomeMindsetPts,
+    max: 15,
+  })
+
+  const total = opennessPts + pressurePts + actionPts + socialPts + incomeMindsetPts
+  return { score: total, breakdown }
+}
+
+function buildKeyMoments(answers) {
+  return [
+    {
+      question: 'Tekanan finansial',
+      answer: getAnswerText('cq3', answers.cq3),
+      insight: (answers.cq3 === 'c' || answers.cq3 === 'd')
+        ? 'Ini sinyal kuat ada kebutuhan nyata akan penghasilan tambahan — titik masuk paling jujur untuk percakapan.'
+        : 'Kondisi yang relatif aman ini tetap bisa dibuka dengan ide "penghasilan tambahan untuk tujuan yang lebih besar."',
+    },
+    {
+      question: 'Reaksi terhadap peluang baru',
+      answer: getAnswerText('cq19', answers.cq19),
+      insight: (answers.cq19 === 'a' || answers.cq19 === 'b')
+        ? 'Keterbukaan ini adalah modal besar — prospek sudah punya kecenderungan mau mendengar lebih jauh.'
+        : 'Butuh pendekatan yang lebih banyak bukti dan testimoni nyata sebelum prospek merasa yakin.',
+    },
+    {
+      question: 'Tingkat keterbukaan (skala 1-5)',
+      answer: getAnswerText('cq24', answers.cq24),
+      insight: (parseInt(answers.cq24) >= 4)
+        ? 'Skor keterbukaan yang tinggi ini adalah lampu hijau — saat yang tepat untuk mengajak ngobrol lebih detail.'
+        : 'Skor ini menunjukkan perlu membangun kepercayaan dan informasi lebih dulu sebelum mengajak ke langkah berikutnya.',
+    },
+  ]
 }
 
 export function calculateCareerScore(answers, prospectDob) {
@@ -110,14 +218,18 @@ export function calculateCareerScore(answers, prospectDob) {
 
   const profile = CAREER_PROFILES[profileType]
 
-  // Compute shio from DOB
+  // Compute shio dari data canonical (lib/shio.js)
   const shioName = prospectDob ? getCareerShio(prospectDob) : 'Tidak diketahui'
-  const shioTraits = SHIO_CAREER_TRAITS[shioName] || SHIO_CAREER_TRAITS['Tidak diketahui']
+  const shioData = getShioByName(shioName)
 
   // Need signal strength (for narrative urgency)
   const needLevel = scores.N >= 20 ? 'high' : scores.N >= 10 ? 'medium' : 'low'
 
   const narrative = buildCareerNarrative(profile, needLevel, openness, scores, answers)
+
+  // Career Readiness Index (0-100) — fitur tambahan, tidak mengubah field lama
+  const cri = calculateCRI(answers)
+  const keyMoments = buildKeyMoments(answers)
 
   return {
     profile_type: profileType,
@@ -133,9 +245,15 @@ export function calculateCareerScore(answers, prospectDob) {
     scores,
     recommendation_narrative: narrative,
     shio: shioName,
-    shio_strength: shioTraits.strength,
-    shio_weakness: shioTraits.weakness,
-    shio_career: shioTraits.career,
+    shio_strength: shioData.strength,
+    shio_weakness: shioData.weakness,
+    shio_career: shioData.salesFit,
+    // --- field tambahan (tidak mengubah perilaku/skema lama) ---
+    shio_emoji: shioData.emoji,
+    shio_jobs: shioData.jobs,
+    cri_score: cri.score,
+    cri_breakdown: cri.breakdown,
+    key_moments: keyMoments,
   }
 }
 
@@ -171,39 +289,9 @@ ${opennessContext}
 ${profile.opportunity}`
 }
 
-// ─── SHIO KARIR TRAITS ───
-// Setiap shio dikaitkan ke kekuatan dan potensi dalam karir/bisnis
-export const SHIO_CAREER_TRAITS = {
-  'Tikus':  { strength: 'Cerdas membaca peluang dan sangat adaptif dengan situasi baru', weakness: 'Terkadang terlalu berhati-hati hingga melewatkan momentum terbaik', career: 'Sangat cocok dengan peran yang membutuhkan analisa dan strategi — termasuk membantu orang lain mengambil keputusan finansial yang tepat.' },
-  'Kerbau': { strength: 'Tekun, dapat diandalkan, dan tidak mudah menyerah di tengah jalan', weakness: 'Bisa terlalu kaku dan lambat menerima cara kerja baru', career: 'Konsistensi dan keandalan adalah modal besar dalam membangun kepercayaan klien jangka panjang.' },
-  'Harimau':{ strength: 'Berani mengambil inisiatif dan punya energi yang menular ke orang lain', weakness: 'Terkadang terlalu impulsif dan kurang sabar dengan proses yang lambat', career: 'Semangat dan keberanian adalah dua hal yang paling dibutuhkan untuk memulai karir baru yang menantang.' },
-  'Kelinci':{ strength: 'Tenang dalam tekanan dan sangat pandai membaca perasaan orang lain', weakness: 'Menghindari konflik hingga sulit memberikan rekomendasi yang tegas', career: 'Empati dan ketenangan adalah daya tarik tersendiri yang membuat orang nyaman berbagi masalah keuangan mereka.' },
-  'Naga':   { strength: 'Karismatik, visioner, dan lahir untuk memimpin dan menginspirasi', weakness: 'Ekspektasi tinggi terhadap diri sendiri bisa menjadi sumber frustrasi', career: 'Aura kepemimpinan dan kepercayaan diri adalah modal alami yang sangat berharga dalam membangun jaringan dan bisnis.' },
-  'Ular':   { strength: 'Intuitif dan strategis — sering punya firasat yang tepat tentang orang', weakness: 'Terlalu hati-hati bisa membuat proses menjadi sangat panjang', career: 'Kemampuan membaca situasi dan orang adalah keunggulan besar dalam memahami kebutuhan klien yang tidak terucap.' },
-  'Kuda':   { strength: 'Energik, bebas, dan tidak pernah kehabisan motivasi untuk bergerak', weakness: 'Mudah bosan dengan rutinitas — perlu variasi untuk tetap semangat', career: 'Energi dan kebebasan bergerak adalah hal yang justru bisa didapat dalam karir berbasis relasi dan mobilitas tinggi.' },
-  'Kambing':{ strength: 'Kreatif dan sangat peduli pada kualitas hubungan dengan orang lain', weakness: 'Sensitif terhadap penolakan dan butuh lingkungan yang supportif', career: 'Kepedulian yang tulus terhadap orang lain adalah fondasi terkuat dalam membangun kepercayaan klien.' },
-  'Monyet': { strength: 'Cepat belajar, fleksibel, dan selalu punya solusi alternatif', weakness: 'Terkadang kurang fokus dan mudah teralihkan ke hal-hal baru', career: 'Kemampuan beradaptasi cepat dan kreativitas dalam memecahkan masalah adalah keunggulan besar di lapangan.' },
-  'Ayam':   { strength: 'Sangat detail dan perfeksionis — jarang membuat kesalahan', weakness: 'Terlalu kritis terhadap diri sendiri bisa menghambat kemajuan', career: 'Ketelitian dan profesionalisme adalah kualitas yang sangat dihargai dalam industri keuangan yang membutuhkan kepercayaan penuh.' },
-  'Anjing': { strength: 'Setia, jujur, dan menjaga komitmen dengan sangat serius', weakness: 'Terlalu loyal bisa membuat sulit mengambil keputusan yang mengubah status quo', career: 'Kejujuran dan kesetiaan adalah reputasi terbaik yang bisa dibangun dalam jangka panjang di industri apapun.' },
-  'Babi':   { strength: 'Hangat, dermawan, dan punya kemampuan alami membuat orang merasa nyaman', weakness: 'Terlalu baik hati bisa dimanfaatkan oleh orang yang tidak tepat', career: 'Kehangatan dan kemampuan membangun rapport yang cepat adalah kekuatan luar biasa dalam membangun jaringan klien.' },
-  'Tidak diketahui': { strength: 'Setiap orang punya kekuatan uniknya sendiri', weakness: 'Kenali dirimu lebih dalam untuk menemukan potensi terbesar', career: 'Langkah pertama menuju sukses adalah memahami siapa dirimu sebenarnya.' },
-}
-
+// Shio karir kini diambil dari sumber tunggal di lib/shio.js.
+// Fungsi ini dipertahankan (signature sama) untuk kompatibilitas mundur.
 export function getCareerShio(dobString) {
   const year = new Date(dobString).getFullYear()
-  const shioList = [
-    { name: 'Tikus',  years: [1924,1936,1948,1960,1972,1984,1996,2008,2020] },
-    { name: 'Kerbau', years: [1925,1937,1949,1961,1973,1985,1997,2009,2021] },
-    { name: 'Harimau',years: [1926,1938,1950,1962,1974,1986,1998,2010,2022] },
-    { name: 'Kelinci', years: [1927,1939,1951,1963,1975,1987,1999,2011,2023] },
-    { name: 'Naga',   years: [1928,1940,1952,1964,1976,1988,2000,2012,2024] },
-    { name: 'Ular',   years: [1929,1941,1953,1965,1977,1989,2001,2013,2025] },
-    { name: 'Kuda',   years: [1930,1942,1954,1966,1978,1990,2002,2014,2026] },
-    { name: 'Kambing',years: [1931,1943,1955,1967,1979,1991,2003,2015] },
-    { name: 'Monyet', years: [1932,1944,1956,1968,1980,1992,2004,2016] },
-    { name: 'Ayam',   years: [1933,1945,1957,1969,1981,1993,2005,2017] },
-    { name: 'Anjing', years: [1934,1946,1958,1970,1982,1994,2006,2018] },
-    { name: 'Babi',   years: [1935,1947,1959,1971,1983,1995,2007,2019] },
-  ]
-  return shioList.find(s => s.years.includes(year))?.name || 'Tidak diketahui'
+  return getShio(year).name
 }

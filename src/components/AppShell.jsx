@@ -78,6 +78,7 @@ export default function AppShell({ children, agent }) {
     { path: '/app/dashboard', label: 'Dashboard', icon: '◈' },
     { path: '/app/survey/new', label: 'Survey Baru', icon: '+' },
     { path: '/app/products', label: 'Produk', icon: '⊡' },
+    { path: '/app/profiles', label: 'Profil', icon: '★' },
     ...(agent?.is_admin ? [{ path: '/app/admin', label: 'Admin', icon: '⚙' }] : []),
   ]
 

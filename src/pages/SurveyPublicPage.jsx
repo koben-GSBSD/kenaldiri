@@ -81,6 +81,28 @@ export default function SurveyPublicPage() {
         primary_product: result.need_level,
         secondary_product: result.profile_type,
         recommendation_narrative: result.recommendation_narrative,
+        // extra_data: field tambahan (additive, tidak mengubah kolom lama) —
+        // menyimpan CRI, key moments, dan data shio yang lebih lengkap supaya
+        // bisa dibaca kembali oleh ResultDetailPage.jsx.
+        extra_data: {
+          survey_type: 'recruiting',
+          profile_label: result.profile_label,
+          profile_icon: result.profile_icon,
+          profile_tagline: result.profile_tagline,
+          profile_description: result.profile_description,
+          profile_insight: result.profile_insight,
+          profile_opportunity: result.profile_opportunity,
+          readiness_note: result.readiness_note,
+          scores: result.scores,
+          shio_emoji: result.shio_emoji,
+          shio_strength: result.shio_strength,
+          shio_weakness: result.shio_weakness,
+          shio_career: result.shio_career,
+          shio_jobs: result.shio_jobs,
+          cri_score: result.cri_score,
+          cri_breakdown: result.cri_breakdown,
+          key_moments: result.key_moments,
+        },
       })
     } else {
       result = calculateScore(finalAnswers, introData.dob, introData.smoker)
@@ -93,6 +115,22 @@ export default function SurveyPublicPage() {
         primary_product: result.primary_product,
         secondary_product: result.secondary_product,
         recommendation_narrative: result.recommendation_narrative,
+        // extra_data: field tambahan (additive) — menyimpan FRS, key moments,
+        // area proteksi, dan data shio yang lebih lengkap untuk ResultDetailPage.jsx.
+        extra_data: {
+          survey_type: 'selling',
+          personality_label: result.personality_label,
+          personality_icon: result.personality_icon,
+          personality_description: result.personality_description,
+          personality_insight: result.personality_insight,
+          scores: result.scores,
+          shio_emoji: result.shio_emoji,
+          shio_spending_behavior: result.shio_spending_behavior,
+          frs_score: result.frs_score,
+          frs_breakdown: result.frs_breakdown,
+          protection_areas: result.protection_areas,
+          key_moments: result.key_moments,
+        },
       })
     }
     await supabase.from('survey_links').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', link.id)

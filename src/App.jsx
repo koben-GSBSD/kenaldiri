@@ -5,6 +5,7 @@ import SurveyTypePage from './pages/SurveyTypePage'
 import NewSurveyPage from './pages/NewSurveyPage'
 import ResultDetailPage from './pages/ResultDetailPage'
 import ProductsPage from './pages/ProductsPage'
+import ProfilesPage from './pages/ProfilesPage'
 import AdminPage from './pages/AdminPage'
 import SurveyPublicPage from './pages/SurveyPublicPage'
 import SurveyDonePage from './pages/SurveyDonePage'
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="survey/new/form" element={<NewSurveyPage />} />
           <Route path="survey/:id" element={<ResultDetailPage />} />
           <Route path="products" element={<ProductsPage />} />
+          <Route path="profiles" element={<ProfilesPage />} />
           <Route path="admin" element={<AdminPage />} />
         </Route>
         <Route path="/" element={<Navigate to="/login" replace />} />
