@@ -211,7 +211,7 @@ export default function AgentKenaldiriPage() {
                             <td style={{ padding:'11px 12px', borderBottom:'1px solid #F1F3F5' }}>
                               {isImported
                                 ? <span style={{ fontSize:'11px', color:'#ADB5BD' }}>—</span>
-                                : <button onClick={() => importAsProspect(s)} disabled={importing === s.id} className="pa-btn pa-btn-red pa-btn-sm" style={{ opacity: importing===s.id?.7:1 }}>
+                                : <button onClick={() => importAsProspect(s)} disabled={importing === s.id} className="pa-btn pa-btn-red pa-btn-sm" style={{ opacity: importing===s.id ? .7 : 1 }}>
                                     {importing === s.id ? 'Mengimport...' : '+ Tambah ke List'}
                                   </button>
                               }
