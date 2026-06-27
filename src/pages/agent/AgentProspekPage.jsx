@@ -67,7 +67,7 @@ export default function AgentProspekPage() {
         </div>
         <div style={{ display:'flex', gap:'5px', flexWrap:'wrap' }}>
           {[['all','Semua'],['nasabah','🏦 Nasabah'],['rekrutan','🤝 Rekrutan']].map(([v,l]) => (
-            <button key={v} onClick={() => setFilterType(v)} style={{ padding:'5px 11px', borderRadius:'20px', fontSize:'11px', fontWeight:'600', cursor:'pointer', border:'none', background: filterType === v ? (v === 'nasabah' ? '#FFF0F1' : v === 'rekrutan' ? '#EFF6FF' : '#1A1A2E'), color: filterType === v ? (v === 'nasabah' ? '#ED1B2E' : v === 'rekrutan' ? '#2563EB' : 'white') : '#6C757D' }}>
+            <button key={v} onClick={() => setFilterType(v)} style={{ padding:'5px 11px', borderRadius:'20px', fontSize:'11px', fontWeight:'600', cursor:'pointer', border:'none', background: filterType === v ? (v === 'nasabah' ? '#FFF0F1' : v === 'rekrutan' ? '#EFF6FF' : '#1A1A2E') : '#F1F3F5', color: filterType === v ? (v === 'nasabah' ? '#ED1B2E' : v === 'rekrutan' ? '#2563EB' : 'white') : '#6C757D' }}>
               {l} {v !== 'all' ? `(${counts[v] || 0})` : `(${prospects.length})`}
             </button>
           ))}
