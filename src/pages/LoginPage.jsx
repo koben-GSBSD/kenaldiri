@@ -1,13 +1,21 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  // Tampilkan pesan jika diredirect karena akun nonaktif
+  useEffect(() => {
+    if (searchParams.get('reason') === 'inactive') {
+      setError('Akun kamu telah dinonaktifkan. Hubungi Super Admin untuk informasi lebih lanjut.')
+    }
+  }, [searchParams])
 
   async function handleLogin(e) {
     e.preventDefault()
@@ -22,8 +30,28 @@ export default function LoginPage() {
       return
     }
 
-    // Login berhasil — langsung ke dashboard
-    // Dashboard & AuthGuard akan handle pengecekan is_active
+    // Verifikasi agen terdaftar dan aktif sebelum redirect
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data: agent } = await supabase
+      .from('agents')
+      .select('id, is_active')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!agent) {
+      await supabase.auth.signOut()
+      setError('Akun tidak terdaftar sebagai agen. Hubungi Super Admin.')
+      setLoading(false)
+      return
+    }
+
+    if (!agent.is_active) {
+      await supabase.auth.signOut()
+      setError('Akun kamu telah dinonaktifkan. Hubungi Super Admin untuk informasi lebih lanjut.')
+      setLoading(false)
+      return
+    }
+
     navigate('/app/dashboard')
   }
 
@@ -37,14 +65,33 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} style={styles.form}>
           <div style={styles.field}>
             <label style={styles.label}>Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} placeholder="email@domain.com" required autoFocus />
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              style={styles.input}
+              placeholder="email@domain.com"
+              required
+              autoFocus
+            />
           </div>
           <div style={styles.field}>
             <label style={styles.label}>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} placeholder="••••••••" required />
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              style={styles.input}
+              placeholder="••••••••"
+              required
+            />
           </div>
-          {error && <div style={styles.error}>{error}</div>}
-          <button type="submit" disabled={loading} style={styles.btn}>{loading ? 'Masuk...' : 'Masuk'}</button>
+          {error && (
+            <div style={styles.error}>{error}</div>
+          )}
+          <button type="submit" disabled={loading} style={styles.btn}>
+            {loading ? 'Masuk...' : 'Masuk'}
+          </button>
         </form>
         <p style={styles.footer}>Butuh akses? Hubungi admin tim Anda.</p>
       </div>
@@ -62,7 +109,7 @@ const styles = {
   field: { display:'flex', flexDirection:'column', gap:'6px' },
   label: { fontSize:'13px', fontWeight:'500', color:'#555' },
   input: { padding:'10px 12px', borderRadius:'8px', border:'1px solid #ddd', fontSize:'14px', outline:'none', color:'#1a1a1a' },
-  error: { background:'#fff5f5', border:'1px solid #feb2b2', borderRadius:'8px', padding:'10px 12px', fontSize:'13px', color:'#c53030' },
+  error: { background:'#fff5f5', border:'1px solid #feb2b2', borderRadius:'8px', padding:'10px 12px', fontSize:'13px', color:'#c53030', lineHeight:'1.5' },
   btn: { padding:'12px', background:'#C0392B', color:'#fff', border:'none', borderRadius:'8px', fontSize:'14px', fontWeight:'600', cursor:'pointer', marginTop:'4px' },
   footer: { marginTop:'24px', textAlign:'center', fontSize:'12px', color:'#999' },
 }
