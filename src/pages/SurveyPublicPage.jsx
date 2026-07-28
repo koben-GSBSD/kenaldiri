@@ -1,10 +1,294 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { QUESTIONS } from '../data/questions'
 import { CAREER_QUESTIONS } from '../data/questionsCareer'
 import { calculateScore } from '../data/scoring'
 import { calculateCareerScore } from '../data/scoringCareer'
+
+// ─── CSS injected once ────────────────────────────────────────────
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .kd-survey-root {
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* BG gradient based on type */
+  .kd-bg-financial { background: linear-gradient(160deg, #f0effe 0%, #f8f7ff 40%, #fafafa 100%); }
+  .kd-bg-career    { background: linear-gradient(160deg, #e6f9f3 0%, #f4fbf8 40%, #fafafa 100%); }
+
+  /* TOP BAR */
+  .kd-topbar {
+    position: sticky; top: 0; z-index: 50;
+    padding: 14px 20px 10px;
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .kd-back-btn {
+    width: 36px; height: 36px;
+    border: none; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .kd-back-btn-financial { background: #ede9fe; color: #7F77DD; }
+  .kd-back-btn-career    { background: #d1fae5; color: #1D9E75; }
+  .kd-back-btn:active { opacity: 0.7; transform: scale(0.93); }
+  .kd-phase-track { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+  .kd-phase-info {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .kd-phase-text {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+  .kd-phase-text-financial { color: #7F77DD; }
+  .kd-phase-text-career    { color: #1D9E75; }
+  .kd-q-counter { font-size: 11px; font-weight: 500; color: #aaa; }
+  .kd-seg-track {
+    display: flex; gap: 3px; height: 4px;
+  }
+  .kd-seg {
+    flex: 1; border-radius: 99px; transition: background 0.4s;
+  }
+  .kd-seg-done-financial { background: #7F77DD; }
+  .kd-seg-done-career    { background: #1D9E75; }
+  .kd-seg-active-financial { background: #c4bff5; }
+  .kd-seg-active-career    { background: #6ee7c0; }
+  .kd-seg-empty { background: #e5e5e5; }
+
+  /* MAIN QUESTION AREA */
+  .kd-main {
+    flex: 1;
+    display: flex; flex-direction: column;
+    padding: 28px 20px 40px;
+    max-width: 540px; width: 100%; margin: 0 auto;
+  }
+
+  /* SLIDE ANIMATION */
+  .kd-slide-enter { animation: kd-slide-in 0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
+  .kd-slide-exit  { animation: kd-slide-out 0.18s ease-in forwards; }
+  @keyframes kd-slide-in {
+    from { opacity: 0; transform: translateX(32px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes kd-slide-out {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(-24px); }
+  }
+  .kd-slide-back-enter { animation: kd-slide-back-in 0.28s cubic-bezier(0.22,1,0.36,1) forwards; }
+  @keyframes kd-slide-back-in {
+    from { opacity: 0; transform: translateX(-32px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .kd-q-label {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .kd-q-label-financial { color: #9f97e8; }
+  .kd-q-label-career    { color: #34c997; }
+
+  .kd-q-text {
+    font-size: 20px; font-weight: 700;
+    color: #1a1a2e; line-height: 1.45;
+    margin-bottom: 10px;
+  }
+  .kd-q-note {
+    font-size: 13px; color: #9fa0b0;
+    line-height: 1.55; margin-bottom: 28px;
+    font-style: italic;
+  }
+  .kd-q-text:not(+ .kd-q-note) { margin-bottom: 28px; }
+
+  /* OPTIONS */
+  .kd-options { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+
+  .kd-opt {
+    width: 100%; min-height: 56px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    background: #fff;
+    border: 1.5px solid #e8e8ef;
+    border-radius: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    position: relative; overflow: hidden;
+  }
+  .kd-opt:active { transform: scale(0.98); }
+
+  .kd-opt-selected-financial {
+    border-color: #7F77DD;
+    background: #f0effe;
+  }
+  .kd-opt-selected-career {
+    border-color: #1D9E75;
+    background: #e6f9f3;
+  }
+
+  .kd-opt-ripple {
+    position: absolute; inset: 0; pointer-events: none;
+    background: rgba(127,119,221,0.1);
+    border-radius: 14px;
+    animation: kd-ripple 0.35s ease-out forwards;
+  }
+  .kd-opt-ripple-career { background: rgba(29,158,117,0.1); }
+  @keyframes kd-ripple {
+    from { opacity: 1; transform: scale(0.92); }
+    to   { opacity: 0; transform: scale(1.04); }
+  }
+
+  .kd-opt-badge {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .kd-opt-badge-default { background: #f0f0f7; color: #888; }
+  .kd-opt-badge-financial { background: #7F77DD; color: #fff; }
+  .kd-opt-badge-career    { background: #1D9E75; color: #fff; }
+
+  .kd-opt-text {
+    font-size: 15px; font-weight: 500; color: #1a1a2e;
+    line-height: 1.4; flex: 1;
+  }
+  .kd-opt-check {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0;
+  }
+  .kd-opt-check-financial { background: #7F77DD; color: #fff; }
+  .kd-opt-check-career    { background: #1D9E75; color: #fff; }
+
+  /* INTRO PAGE */
+  .kd-intro-wrap {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center;
+    padding: 32px 24px 40px;
+    max-width: 540px; width: 100%; margin: 0 auto;
+    animation: kd-slide-in 0.4s cubic-bezier(0.22,1,0.36,1);
+  }
+  .kd-intro-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 99px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 24px; width: fit-content;
+  }
+  .kd-intro-badge-financial { background: #ede9fe; color: #7F77DD; }
+  .kd-intro-badge-career    { background: #d1fae5; color: #1D9E75; }
+  .kd-intro-hi {
+    font-size: 30px; font-weight: 800; color: #1a1a2e;
+    line-height: 1.2; margin-bottom: 8px;
+  }
+  .kd-intro-sub {
+    font-size: 16px; color: #6b7280; line-height: 1.6;
+    margin-bottom: 28px;
+  }
+  .kd-intro-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .kd-intro-card {
+    display: flex; align-items: center; gap: 12px;
+    background: #fff; border: 1px solid #eee;
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .kd-intro-card-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .kd-intro-card-icon-financial { background: #ede9fe; }
+  .kd-intro-card-icon-career    { background: #d1fae5; }
+  .kd-intro-card-text { font-size: 14px; color: #374151; line-height: 1.4; }
+  .kd-intro-card-text strong { color: #1a1a2e; font-weight: 600; }
+  .kd-intro-privacy {
+    font-size: 12px; color: #9ca3af;
+    line-height: 1.55; margin-bottom: 24px;
+    display: flex; gap: 6px; align-items: flex-start;
+  }
+  .kd-start-btn {
+    width: 100%; padding: 17px;
+    border: none; border-radius: 14px;
+    font-size: 16px; font-weight: 700;
+    color: #fff; cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: all 0.15s;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  .kd-start-btn:active { transform: scale(0.98); opacity: 0.9; }
+  .kd-start-btn-financial { background: linear-gradient(135deg, #7F77DD 0%, #9f97f5 100%); }
+  .kd-start-btn-career    { background: linear-gradient(135deg, #1D9E75 0%, #34c997 100%); }
+
+  /* STATUS SCREENS */
+  .kd-status-wrap {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center;
+    animation: kd-slide-in 0.4s cubic-bezier(0.22,1,0.36,1);
+  }
+  .kd-status-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 20px;
+  }
+  .kd-status-title { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+  .kd-status-msg   { font-size: 15px; color: #6b7280; line-height: 1.6; max-width: 320px; }
+
+  /* SUBMITTING */
+  .kd-submit-wrap {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; gap: 20px;
+  }
+  .kd-spinner {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 3px solid #e5e5e5;
+    border-top-color: #7F77DD;
+    animation: kd-spin 0.8s linear infinite;
+  }
+  .kd-spinner-career { border-top-color: #1D9E75; }
+  @keyframes kd-spin { to { transform: rotate(360deg); } }
+  .kd-submit-label { font-size: 15px; font-weight: 600; color: #6b7280; }
+
+  /* FOOTER BRAND */
+  .kd-footer { text-align: center; padding: 16px; font-size: 11px; color: #ccc; }
+
+  @media (max-width: 380px) {
+    .kd-q-text { font-size: 18px; }
+    .kd-opt { min-height: 52px; padding: 12px 14px; }
+    .kd-opt-text { font-size: 14px; }
+  }
+`
+
+let cssInjected = false
+function injectCSS() {
+  if (cssInjected) return
+  const style = document.createElement('style')
+  style.textContent = CSS
+  document.head.appendChild(style)
+  cssInjected = true
+}
+
+// Nama fase per survey type
+const PHASE_NAMES = {
+  financial: ['Karakter Dasar', 'Gaya Finansial', 'Proteksi & Risiko', 'Kehidupan & Tujuan', 'Perspektif'],
+  career:    ['Situasi & Rasa', 'Karakter & Motivasi', 'Jaringan & Pengaruh', 'Peluang & Kesiapan', 'Visi'],
+}
 
 export default function SurveyPublicPage() {
   const { token } = useParams()
@@ -14,9 +298,12 @@ export default function SurveyPublicPage() {
   const [currentQ, setCurrentQ] = useState(0)
   const [answers, setAnswers] = useState({})
   const [introData, setIntroData] = useState({})
+  const [anim, setAnim] = useState('enter')  // 'enter' | 'exit' | 'back-enter'
+  const [ripple, setRipple] = useState(null) // optId yang diklik
   const storageKey = `kenaldiri_${token}`
+  const animRef = useRef(null)
 
-  useEffect(() => { validateLink() }, [token])
+  useEffect(() => { injectCSS(); validateLink() }, [token])
 
   async function validateLink() {
     const { data, error } = await supabase
@@ -36,7 +323,13 @@ export default function SurveyPublicPage() {
     }
 
     setLink(data)
-    setIntroData({ name: data.prospect_name, dob: data.prospect_dob, job: data.prospect_job, smoker: data.prospect_smoker, type: data.survey_type || 'selling' })
+    setIntroData({
+      name: data.prospect_name,
+      dob: data.prospect_dob,
+      job: data.prospect_job,
+      smoker: data.prospect_smoker,
+      type: data.survey_type || 'selling',
+    })
 
     if (!data.opened_at) {
       await supabase.from('survey_links').update({ opened_at: new Date().toISOString() }).eq('id', data.id)
@@ -44,31 +337,64 @@ export default function SurveyPublicPage() {
 
     const saved = localStorage.getItem(storageKey)
     if (saved) {
-      const parsed = JSON.parse(saved)
-      setAnswers(parsed.answers || {})
-      setCurrentQ(parsed.currentQ || 0)
+      try {
+        const parsed = JSON.parse(saved)
+        setAnswers(parsed.answers || {})
+        setCurrentQ(parsed.currentQ || 0)
+      } catch {}
     }
     setStatus('intro')
   }
 
-  const isCareer = introData.type === 'recruiting'
+  const isCareer  = introData.type === 'recruiting'
   const questions = isCareer ? CAREER_QUESTIONS : QUESTIONS
-  const q = questions[currentQ]
+  const q         = questions[currentQ]
+  const t         = isCareer ? 'career' : 'financial'
+  const phaseNames = isCareer ? PHASE_NAMES.career : PHASE_NAMES.financial
 
-  function handleAnswer(questionId, optionId) {
-    const newAnswers = { ...answers, [questionId]: optionId }
+  // Hitung fase dan segmen untuk progress bar
+  const phases = [...new Set(questions.map(q => q.phase))]
+  const currentPhase = q?.phase || 1
+  const qInPhase  = questions.filter(x => x.phase === currentPhase)
+  const idxInPhase = qInPhase.indexOf(q)
+
+  function goNext(newAnswers, nextIdx) {
+    setAnim('exit')
+    clearTimeout(animRef.current)
+    animRef.current = setTimeout(() => {
+      if (nextIdx < questions.length) {
+        setCurrentQ(nextIdx)
+        setAnim('enter')
+      }
+    }, 180)
+    localStorage.setItem(storageKey, JSON.stringify({ answers: newAnswers, currentQ: nextIdx }))
+  }
+
+  function goBack() {
+    if (currentQ === 0) { setStatus('intro'); return }
+    setAnim('back-enter')
+    clearTimeout(animRef.current)
+    animRef.current = setTimeout(() => {
+      setCurrentQ(prev => prev - 1)
+    }, 0)
+    localStorage.setItem(storageKey, JSON.stringify({ answers, currentQ: currentQ - 1 }))
+  }
+
+  function handleAnswer(questionId, optId) {
+    setRipple(optId)
+    setTimeout(() => setRipple(null), 400)
+    const newAnswers = { ...answers, [questionId]: optId }
     setAnswers(newAnswers)
     const next = currentQ + 1
-    localStorage.setItem(storageKey, JSON.stringify({ answers: newAnswers, currentQ: next }))
     if (next < questions.length) {
-      setTimeout(() => setCurrentQ(next), 280)
+      goNext(newAnswers, next)
     } else {
+      setStatus('submitting')
       submitSurvey(newAnswers)
     }
   }
 
   async function submitSurvey(finalAnswers) {
-    setStatus('submitting')
     let result
     if (isCareer) {
       result = calculateCareerScore(finalAnswers, introData.dob)
@@ -81,9 +407,6 @@ export default function SurveyPublicPage() {
         primary_product: result.need_level,
         secondary_product: result.profile_type,
         recommendation_narrative: result.recommendation_narrative,
-        // extra_data: field tambahan (additive, tidak mengubah kolom lama) —
-        // menyimpan CRI, key moments, dan data shio yang lebih lengkap supaya
-        // bisa dibaca kembali oleh ResultDetailPage.jsx.
         extra_data: {
           survey_type: 'recruiting',
           profile_label: result.profile_label,
@@ -115,8 +438,6 @@ export default function SurveyPublicPage() {
         primary_product: result.primary_product,
         secondary_product: result.secondary_product,
         recommendation_narrative: result.recommendation_narrative,
-        // extra_data: field tambahan (additive) — menyimpan FRS, key moments,
-        // area proteksi, dan data shio yang lebih lengkap untuk ResultDetailPage.jsx.
         extra_data: {
           survey_type: 'selling',
           personality_label: result.personality_label,
@@ -133,137 +454,202 @@ export default function SurveyPublicPage() {
         },
       })
     }
-    await supabase.from('survey_links').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', link.id)
+    await supabase.from('survey_links').update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+    }).eq('id', link.id)
     localStorage.removeItem(storageKey)
     navigate(`/s/${token}/done`, { state: { result, name: introData.name, type: introData.type } })
   }
 
-  const progress = Math.round((currentQ / questions.length) * 100)
-
-  // Color theme based on type
-  const theme = isCareer
-    ? { primary: '#1D9E75', light: '#E1F5EE', brand: 'KENALDIRI · PROFIL PELUANG' }
-    : { primary: '#7F77DD', light: '#EEEDFE', brand: 'KENALDIRI · PROFIL KEUANGAN' }
-
-  if (status === 'loading') return <Screen><Spinner /></Screen>
-  if (status === 'invalid') return <Screen><ErrorMsg title="Link tidak tersedia" msg="Link ini tidak valid atau telah dinonaktifkan." /></Screen>
-  if (status === 'expired') return <Screen><ErrorMsg title="Link sudah kedaluwarsa" msg="Link survey ini hanya aktif selama 1 jam. Silakan minta link baru kepada agen Anda." /></Screen>
-  if (status === 'completed') return <Screen><ErrorMsg title="Survey sudah diisi" msg="Terima kasih! Survey ini sudah pernah diisi sebelumnya." green /></Screen>
-  if (status === 'submitting') return <Screen><Spinner label="Menganalisa jawabanmu..." /></Screen>
-
-  if (status === 'intro') {
+  // ── RENDER: Status screens ────────────────────────────────────────
+  if (status === 'loading') {
     return (
-      <Screen theme={theme}>
-        <div style={s.card}>
-          <div style={{ ...s.kdBrand, color: theme.primary }}>{theme.brand}</div>
-          <h1 style={s.introTitle}>Halo, {introData.name}!</h1>
-          <p style={s.introText}>
-            Kamu akan menjawab <strong>{questions.length} pertanyaan</strong> singkat tentang{' '}
-            {isCareer ? 'karakter, motivasi, dan peluang karirmu' : 'kepribadian dan gaya hidupmu'}.{' '}
-            Tidak ada jawaban benar atau salah — semua tentang dirimu.
-          </p>
-          <p style={s.introText}>Estimasi waktu: <strong>10–15 menit</strong>.</p>
-          <div style={s.privacyNote}>
-            Data yang kamu isi hanya digunakan untuk keperluan analisa dan tidak dibagikan kepada pihak ketiga.
-          </div>
-          <button onClick={() => setStatus('survey')} style={{ ...s.startBtn, background: theme.primary }}>
-            Mulai Sekarang →
-          </button>
+      <div className={`kd-survey-root kd-bg-financial`}>
+        <div className="kd-submit-wrap">
+          <div className="kd-spinner" />
+          <div className="kd-submit-label">Memuat survey...</div>
         </div>
-      </Screen>
+      </div>
     )
   }
 
-  return (
-    <Screen theme={theme}>
-      <div style={s.surveyWrap}>
-        <div style={s.progressWrap}>
-          <div style={s.progressBar}>
-            <div style={{ ...s.progressFill, width: `${progress}%`, background: theme.primary }} />
-          </div>
-          <div style={s.progressLabel}>{currentQ + 1} / {questions.length}</div>
+  if (status === 'invalid') {
+    return (
+      <div className="kd-survey-root kd-bg-financial">
+        <div className="kd-status-wrap">
+          <div className="kd-status-icon" style={{ background: '#fee2e2' }}>❌</div>
+          <div className="kd-status-title">Link tidak tersedia</div>
+          <div className="kd-status-msg">Link ini tidak valid atau telah dinonaktifkan. Silakan hubungi agen Anda.</div>
         </div>
+      </div>
+    )
+  }
 
-        <div style={{ ...s.phaseLabel, color: theme.primary }}>Bagian {q.phase}</div>
+  if (status === 'expired') {
+    return (
+      <div className="kd-survey-root kd-bg-financial">
+        <div className="kd-status-wrap">
+          <div className="kd-status-icon" style={{ background: '#fef3c7' }}>⏰</div>
+          <div className="kd-status-title">Link sudah kedaluwarsa</div>
+          <div className="kd-status-msg">Link survey ini sudah tidak aktif. Minta link baru kepada agen Anda.</div>
+        </div>
+      </div>
+    )
+  }
 
-        <div style={s.questionCard}>
-          <p style={s.questionText}>{q.text}</p>
-          {q.note && <p style={s.questionNote}>{q.note}</p>}
-          <div style={s.options}>
-            {q.options.map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => handleAnswer(q.id, opt.id)}
-                style={{
-                  ...s.optionBtn,
-                  ...(answers[q.id] === opt.id ? { ...s.optionSelected, background: theme.light, border: `2px solid ${theme.primary}` } : {})
-                }}
-              >
-                <span style={{ ...s.optionLetter, background: theme.light, color: theme.primary }}>{opt.id.toUpperCase()}</span>
-                <span style={s.optionText}>{opt.text}</span>
-              </button>
+  if (status === 'completed') {
+    return (
+      <div className="kd-survey-root kd-bg-financial">
+        <div className="kd-status-wrap">
+          <div className="kd-status-icon" style={{ background: '#d1fae5' }}>✓</div>
+          <div className="kd-status-title">Survey sudah diisi</div>
+          <div className="kd-status-msg">Terima kasih! Survey ini sudah pernah diisi sebelumnya.</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'submitting') {
+    return (
+      <div className={`kd-survey-root kd-bg-${t}`}>
+        <div className="kd-submit-wrap">
+          <div className={`kd-spinner${isCareer ? ' kd-spinner-career' : ''}`} />
+          <div className="kd-submit-label">Menganalisa jawabanmu...</div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── RENDER: Intro ─────────────────────────────────────────────────
+  if (status === 'intro') {
+    const cards = isCareer
+      ? [
+          { icon: '🧠', text: <><strong>25 pertanyaan</strong> tentang karakter, motivasi, dan potensimu</> },
+          { icon: '⏱️', text: <><strong>10–15 menit</strong> — bisa dijawab santai</> },
+          { icon: '🎯', text: <>Hasil analisa <strong>langsung</strong> setelah selesai</> },
+        ]
+      : [
+          { icon: '💡', text: <><strong>25 pertanyaan</strong> tentang kepribadian dan gaya hidupmu</> },
+          { icon: '⏱️', text: <><strong>10–15 menit</strong> — tidak ada jawaban benar atau salah</> },
+          { icon: '📊', text: <>Profil finansial <strong>lengkap</strong> langsung setelah selesai</> },
+        ]
+
+    return (
+      <div className={`kd-survey-root kd-bg-${t}`}>
+        <div className="kd-intro-wrap">
+          <div className={`kd-intro-badge kd-intro-badge-${t}`}>
+            {isCareer ? '🌱 ProfilKu Peluang' : '💼 ProfilKu Finansial'}
+          </div>
+          <h1 className="kd-intro-hi">Halo, {introData.name}! 👋</h1>
+          <p className="kd-intro-sub">
+            {isCareer
+              ? 'Siap kenalan sama potensi dirimu? Survey singkat ini akan ungkap karakter dan peluang yang cocok untukmu.'
+              : 'Mari kenali lebih dalam gaya finansial dan kepribadianmu. Hasilnya bisa jadi cermin diri yang berguna.'}
+          </p>
+          <div className="kd-intro-cards">
+            {cards.map((c, i) => (
+              <div key={i} className="kd-intro-card">
+                <div className={`kd-intro-card-icon kd-intro-card-icon-${t}`}>{c.icon}</div>
+                <div className="kd-intro-card-text">{c.text}</div>
+              </div>
             ))}
           </div>
+          <div className="kd-intro-privacy">
+            <span>🔒</span>
+            <span>Jawabanmu bersifat pribadi dan hanya digunakan untuk analisa profilmu. Tidak dibagikan kepada pihak lain.</span>
+          </div>
+          <button
+            className={`kd-start-btn kd-start-btn-${t}`}
+            onClick={() => setStatus('survey')}
+          >
+            Mulai Sekarang →
+          </button>
         </div>
-
-        {currentQ > 0 && (
-          <button onClick={() => setCurrentQ(currentQ - 1)} style={s.backBtn}>← Kembali</button>
-        )}
-
-        <div style={s.brandFooter}>KenalDiri · {isCareer ? 'ProfilKu Peluang' : 'ProfilKu Finansial'}</div>
+        <div className="kd-footer">KenalDiri · {isCareer ? 'ProfilKu Peluang' : 'ProfilKu Finansial'}</div>
       </div>
-    </Screen>
-  )
-}
+    )
+  }
 
-function Screen({ children, theme }) {
+  // ── RENDER: Survey ────────────────────────────────────────────────
+  const animClass = anim === 'exit' ? 'kd-slide-exit'
+    : anim === 'back-enter' ? 'kd-slide-back-enter'
+    : 'kd-slide-enter'
+
   return (
-    <div style={{ minHeight:'100vh', background:'#f8f7ff', display:'flex', alignItems:'center', justifyContent:'center', padding:'16px', fontFamily:'system-ui,-apple-system,sans-serif' }}>
-      <div style={{ width:'100%', maxWidth:'480px' }}>{children}</div>
+    <div className={`kd-survey-root kd-bg-${t}`}>
+      {/* TOP BAR */}
+      <div className="kd-topbar">
+        <button
+          className={`kd-back-btn kd-back-btn-${t}`}
+          onClick={goBack}
+          aria-label="Kembali"
+        >←</button>
+        <div className="kd-phase-track">
+          <div className="kd-phase-info">
+            <span className={`kd-phase-text kd-phase-text-${t}`}>
+              {phaseNames[currentPhase - 1]}
+            </span>
+            <span className="kd-q-counter">{currentQ + 1} / {questions.length}</span>
+          </div>
+          {/* Segmented progress — satu segmen per fase */}
+          <div className="kd-seg-track">
+            {phases.map(ph => {
+              const phQs = questions.filter(x => x.phase === ph)
+              const phStart = questions.indexOf(phQs[0])
+              const phEnd = phStart + phQs.length - 1
+              const done = currentQ > phEnd
+              const active = currentQ >= phStart && currentQ <= phEnd
+              const cls = done ? `kd-seg-done-${t}`
+                : active ? `kd-seg-active-${t}`
+                : 'kd-seg-empty'
+              return <div key={ph} className={`kd-seg ${cls}`} />
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* QUESTION */}
+      <div className="kd-main">
+        <div key={currentQ} className={animClass} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          <div style={{ flex: 1 }}>
+            <div className={`kd-q-label kd-q-label-${t}`}>
+              Pertanyaan {currentQ + 1}
+            </div>
+            <p className="kd-q-text">{q.text}</p>
+            {q.note && <p className="kd-q-note">{q.note}</p>}
+          </div>
+          <div className="kd-options">
+            {q.options.map(opt => {
+              const selected = answers[q.id] === opt.id
+              const isRippling = ripple === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  className={[
+                    'kd-opt',
+                    selected ? `kd-opt-selected-${t}` : '',
+                  ].join(' ')}
+                  onClick={() => handleAnswer(q.id, opt.id)}
+                >
+                  {isRippling && (
+                    <span className={`kd-opt-ripple${isCareer ? ' kd-opt-ripple-career' : ''}`} />
+                  )}
+                  <span className={`kd-opt-badge ${selected ? `kd-opt-badge-${t}` : 'kd-opt-badge-default'}`}>
+                    {opt.id.toUpperCase()}
+                  </span>
+                  <span className="kd-opt-text">{opt.text}</span>
+                  {selected && (
+                    <span className={`kd-opt-check kd-opt-check-${t}`}>✓</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="kd-footer">KenalDiri · {isCareer ? 'ProfilKu Peluang' : 'ProfilKu Finansial'}</div>
     </div>
   )
-}
-
-function Spinner({ label = 'Memuat...' }) {
-  return (
-    <div style={{ textAlign:'center', color:'#888', padding:'40px' }}>
-      <div style={{ fontSize:'24px', marginBottom:'12px', animation:'spin 1s linear infinite' }}>⟳</div>
-      <div style={{ fontSize:'14px' }}>{label}</div>
-    </div>
-  )
-}
-
-function ErrorMsg({ title, msg, green }) {
-  return (
-    <div style={{ background:'#fff', borderRadius:'16px', padding:'40px', textAlign:'center', border:'1px solid #eee' }}>
-      <div style={{ fontSize:'40px', marginBottom:'16px' }}>{green ? '✓' : '✕'}</div>
-      <h2 style={{ fontSize:'18px', fontWeight:'700', color:'#1a1a1a', marginBottom:'8px' }}>{title}</h2>
-      <p style={{ fontSize:'14px', color:'#888', lineHeight:1.6 }}>{msg}</p>
-    </div>
-  )
-}
-
-const s = {
-  card: { background:'#fff', borderRadius:'16px', padding:'36px 28px', border:'1px solid #eee' },
-  kdBrand: { fontSize:'12px', fontWeight:'700', letterSpacing:'0.1em', marginBottom:'20px', textTransform:'uppercase' },
-  introTitle: { fontSize:'22px', fontWeight:'700', color:'#1a1a1a', marginBottom:'12px' },
-  introText: { fontSize:'15px', color:'#555', lineHeight:1.7, marginBottom:'10px' },
-  privacyNote: { background:'#f0f0f0', borderRadius:'8px', padding:'12px', fontSize:'12px', color:'#888', marginBottom:'24px', lineHeight:1.5 },
-  startBtn: { width:'100%', padding:'14px', color:'#fff', border:'none', borderRadius:'10px', fontSize:'15px', fontWeight:'600', cursor:'pointer' },
-  surveyWrap: { display:'flex', flexDirection:'column', gap:'16px' },
-  progressWrap: { display:'flex', alignItems:'center', gap:'12px' },
-  progressBar: { flex:1, height:'6px', background:'#e8e8f0', borderRadius:'99px', overflow:'hidden' },
-  progressFill: { height:'100%', borderRadius:'99px', transition:'width 0.3s' },
-  progressLabel: { fontSize:'12px', color:'#999', minWidth:'40px', textAlign:'right' },
-  phaseLabel: { fontSize:'12px', fontWeight:'500', textTransform:'uppercase', letterSpacing:'0.08em' },
-  questionCard: { background:'#fff', borderRadius:'16px', padding:'28px', border:'1px solid #eee' },
-  questionText: { fontSize:'16px', fontWeight:'600', color:'#1a1a1a', lineHeight:1.6, marginBottom:'8px' },
-  questionNote: { fontSize:'13px', color:'#999', marginBottom:'20px', fontStyle:'italic' },
-  options: { display:'flex', flexDirection:'column', gap:'10px' },
-  optionBtn: { display:'flex', alignItems:'center', gap:'12px', padding:'14px 16px', background:'#f8f8f8', border:'2px solid transparent', borderRadius:'10px', cursor:'pointer', textAlign:'left', transition:'all 0.15s' },
-  optionSelected: { background:'#f0effe', border:'2px solid #7F77DD' },
-  optionLetter: { width:'28px', height:'28px', background:'#e8e8f0', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'700', flexShrink:0 },
-  optionText: { fontSize:'14px', color:'#333', lineHeight:1.4 },
-  backBtn: { background:'none', border:'none', color:'#999', fontSize:'13px', cursor:'pointer', padding:'4px 0' },
-  brandFooter: { textAlign:'center', fontSize:'11px', color:'#ccc', paddingTop:'8px' },
 }
