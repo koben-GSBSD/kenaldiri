@@ -27,6 +27,7 @@ export default function AgentKenaldiriPage() {
   const [copied, setCopied]     = useState(false)
   const [panel, setPanel]       = useState(null) // { survey, response }
   const [importing, setImporting] = useState(false)
+  const [genError, setGenError] = useState(null)
 
   const loadSurveys = useCallback(async (ag) => {
     if (!ag) return
@@ -56,6 +57,7 @@ export default function AgentKenaldiriPage() {
     if (!agent) return
     setGenerating(type)
     setGeneratedLink(null)
+    setGenError(null)
     const token = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     const { error } = await supabase.from('survey_links').insert({
@@ -68,6 +70,8 @@ export default function AgentKenaldiriPage() {
     })
     if (!error) {
       setGeneratedLink({ url: `${BASE_URL}/s/${token}`, type })
+    } else {
+      setGenError(error.message || 'Gagal membuat link. Coba lagi.')
     }
     setGenerating(null)
   }
@@ -163,6 +167,12 @@ export default function AgentKenaldiriPage() {
               </button>
             ))}
           </div>
+
+          {genError && (
+            <div style={{ background:'#FCEAEA', border:'1px solid #F5B7B1', borderRadius:'10px', padding:'12px 16px', fontSize:'13px', color:'#9B1C1C', fontWeight:'500' }}>
+              ⚠️ {genError}
+            </div>
+          )}
 
           {generatedLink && (
             <div style={{ background:'#fff', border:'1px solid #E9ECEF', borderRadius:'14px', padding:'20px' }}>
