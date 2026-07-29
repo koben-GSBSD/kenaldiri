@@ -1,49 +1,50 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAgent } from '../../hooks/useAgent'
 import AgentShell from '../../components/agent/AgentShell'
+import ResultPanel from '../../components/agent/ResultPanel'
 
 const PROFILE_LABEL = {
-  perencana: 'The Architect (Si Perencana)',
-  pelindung: 'The Guardian (Si Penjaga)',
-  pembangun: 'The Builder (Si Pembangun)',
-  penjelajah: 'The Explorer (Si Penjelajah)',
-  connector: 'The Connector (Si Penghubung)',
-  achiever: 'The Achiever (Si Pencetak Hasil)',
-  empath: 'The Empath (Si Pembawa Makna)',
-  explorer: 'The Explorer (Si Penjelajah Peluang)',
+  perencana: 'The Architect', pelindung: 'The Guardian',
+  pembangun: 'The Builder',  penjelajah: 'The Explorer',
+  connector: 'The Connector', achiever: 'The Achiever',
+  empath: 'The Empath',      explorer: 'The Explorer (Peluang)',
 }
+
+const BASE_URL = window.location.origin
 
 export default function AgentKenaldiriPage() {
   const { agent }   = useAgent()
-  const [tab, setTab] = useState('new_survey') // 'new_survey' | 'results'
-  const [surveys, setSurveys]       = useState([])
-  const [importing, setImporting]   = useState(null)
+  const location    = useLocation()
+  const initTab     = new URLSearchParams(location.search).get('tab') === 'results' ? 'results' : 'new_survey'
+  const [tab, setTab]           = useState(initTab)
+  const [surveys, setSurveys]   = useState([])
   const [importedIds, setImportedIds] = useState(new Set())
-  const [loading, setLoading]       = useState(false)
-  const [iframeUrl, setIframeUrl]   = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [generating, setGenerating] = useState(null) // 'selling' | 'recruiting' | null
+  const [generatedLink, setGeneratedLink] = useState(null) // { url, type }
+  const [copied, setCopied]     = useState(false)
+  const [panel, setPanel]       = useState(null) // { survey, response }
+  const [importing, setImporting] = useState(false)
 
-  // Load completed surveys from KenalDiri that don't have a prospect yet
   const loadSurveys = useCallback(async (ag) => {
     if (!ag) return
     setLoading(true)
     let q = supabase
       .from('survey_links')
-      .select('*, survey_responses(personality_type, primary_product, submitted_at)')
+      .select('*, survey_responses(personality_type, primary_product, extra_data, readiness_score, recommendation_narrative, shio)')
       .eq('status', 'completed')
       .order('completed_at', { ascending: false })
-      .limit(30)
+      .limit(50)
     if (!ag.is_admin) q = q.eq('agent_id', ag.id)
     const { data } = await q
     setSurveys(data || [])
 
-    // Check which survey_link_ids already imported as prospects
     if (data?.length) {
       const ids = data.map(s => s.id)
       const { data: existing } = await supabase
-        .from('prospects')
-        .select('survey_link_id')
-        .in('survey_link_id', ids)
+        .from('prospects').select('survey_link_id').in('survey_link_id', ids)
       setImportedIds(new Set((existing || []).map(x => x.survey_link_id)))
     }
     setLoading(false)
@@ -51,181 +52,215 @@ export default function AgentKenaldiriPage() {
 
   useEffect(() => { if (agent) loadSurveys(agent) }, [agent, loadSurveys])
 
-  // Build KenalDiri survey URL for iframe
-  function openSurvey(type) {
-    // Opens new survey flow within KenalDiri embedded
-    setTab('new_survey')
-    setIframeUrl(`/app/survey/new?embed=1&type=${type}`)
-  }
-
-  async function importAsProspect(survey) {
-    setImporting(survey.id)
-    try {
-      const { error } = await supabase.from('prospects').insert({
-        agent_id:        survey.agent_id || agent.id,
-        prospect_type:   survey.survey_type === 'selling' ? 'nasabah' : 'rekrutan',
-        full_name:       survey.prospect_name || 'Prospek dari KenalDiri',
-        dob:             survey.prospect_dob || null,
-        occupation:      survey.prospect_job || null,
-        source:          'kenaldiri',
-        stage:           'fact_finding',
-        notes:           `Dari survey KenalDiri #${survey.id.slice(0,8)}. Profil: ${PROFILE_LABEL[survey.survey_responses?.personality_type] || survey.survey_responses?.personality_type || '—'}. Produk rekomendasi: ${survey.survey_responses?.primary_product || '—'}.`,
-        survey_link_id:  survey.id,
-      })
-      if (!error) {
-        setImportedIds(prev => new Set([...prev, survey.id]))
-      }
-    } finally {
-      setImporting(null)
+  async function generateLink(type) {
+    if (!agent) return
+    setGenerating(type)
+    setGeneratedLink(null)
+    const token = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    const { error } = await supabase.from('survey_links').insert({
+      agent_id:    agent.id,
+      token,
+      survey_type: type,
+      status:      'pending',
+      expires_at:  expires,
+      prospect_name: '',
+    })
+    if (!error) {
+      setGeneratedLink({ url: `${BASE_URL}/s/${token}`, type })
     }
+    setGenerating(null)
   }
 
-  const unimported = surveys.filter(s => !importedIds.has(s.id))
-  const imported   = surveys.filter(s => importedIds.has(s.id))
+  async function copyLink() {
+    if (!generatedLink) return
+    await navigator.clipboard.writeText(generatedLink.url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function shareWA() {
+    if (!generatedLink) return
+    const isCareer = generatedLink.type === 'recruiting'
+    const msg = isCareer
+      ? `Halo! Kami mengundangmu untuk mengisi survey singkat *ProfilKu Peluang* — kenali potensi dan peluang karirmu.\n\nLink survey (berlaku 24 jam):\n${generatedLink.url}`
+      : `Halo! Kami mengundangmu untuk mengisi survey singkat *ProfilKu Finansial* — kenali kepribadian dan profil keuanganmu.\n\nLink survey (berlaku 24 jam):\n${generatedLink.url}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
+  }
+
+  async function openPanel(survey) {
+    const response = survey.survey_responses || null
+    setPanel({ survey, response })
+  }
+
+  async function handleImport(survey) {
+    if (!agent || importedIds.has(survey.id)) return
+    setImporting(true)
+    const response = survey.survey_responses
+    const { error } = await supabase.from('prospects').insert({
+      agent_id:       survey.agent_id || agent.id,
+      prospect_type:  survey.survey_type === 'selling' ? 'nasabah' : 'rekrutan',
+      full_name:      survey.prospect_name || 'Prospek dari KenalDiri',
+      dob:            survey.prospect_dob || null,
+      occupation:     survey.prospect_job || null,
+      source:         'kenaldiri',
+      stage:          'fact_finding',
+      survey_link_id: survey.id,
+      notes: `Dari KenalDiri. Profil: ${PROFILE_LABEL[response?.personality_type] || response?.personality_type || '—'}.`,
+    })
+    if (!error) {
+      setImportedIds(prev => new Set([...prev, survey.id]))
+      setPanel(null)
+    }
+    setImporting(false)
+  }
+
+  const unprocessed = surveys.filter(s => !importedIds.has(s.id)).length
+
+  const accent = '#7F77DD'
 
   return (
-    <AgentShell agent={agent} pageTitle="KenalDiri Survey">
-      {/* Status banner */}
-      <div style={{ background:'linear-gradient(135deg,#1A1A2E 0%,#2D2D4A 100%)', borderRadius:'11px', padding:'16px 18px', marginBottom:'16px', display:'flex', alignItems:'center', gap:'14px', flexWrap:'wrap' }}>
-        <div style={{ fontSize:'32px' }}>🔗</div>
-        <div style={{ flex:1, minWidth:'180px' }}>
-          <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:'15px', fontWeight:'800', color:'white', marginBottom:'3px' }}>Terhubung dengan KenalDiri</div>
-          <div style={{ fontSize:'11px', color:'rgba(255,255,255,.55)' }}>Survey selesai otomatis bisa diimport sebagai prospek. Session login yang sama digunakan.</div>
-        </div>
-        <div style={{ background:'#12B76A', color:'white', padding:'5px 12px', borderRadius:'20px', fontSize:'11px', fontWeight:'700', flexShrink:0 }}>● AKTIF</div>
-      </div>
-
-      {/* TABS */}
-      <div style={{ display:'flex', gap:'3px', background:'#F1F3F5', padding:'4px', borderRadius:'10px', width:'fit-content', marginBottom:'16px' }}>
-        {[['new_survey','Survey Baru'],['results','Hasil Survey']].map(([k,l]) => (
-          <button key={k} onClick={() => setTab(k)} style={{ padding:'6px 14px', borderRadius:'7px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border:'none', background: tab===k?'white':'transparent', color: tab===k?'#1A1A2E':'#6C757D', boxShadow: tab===k?'0 1px 3px rgba(0,0,0,.1)':'none' }}>
-            {l} {k==='results' && unimported.length > 0 && <span style={{ background:'#ED1B2E', color:'white', fontSize:'10px', fontWeight:'700', padding:'1px 5px', borderRadius:'10px', marginLeft:'4px' }}>{unimported.length}</span>}
+    <AgentShell agent={agent} pageTitle="KenalDiri">
+      {/* Tabs */}
+      <div style={{ display:'flex', gap:'0', marginBottom:'20px', background:'#F1F3F5', borderRadius:'10px', padding:'3px' }}>
+        {[
+          { key:'new_survey', label:'🔗 Survey Baru' },
+          { key:'results', label:`📋 Hasil Survey${unprocessed > 0 ? ` (${unprocessed})` : ''}` },
+        ].map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)} style={{
+            flex:1, padding:'9px 14px', border:'none', borderRadius:'8px', cursor:'pointer',
+            fontSize:'13px', fontWeight:'600', transition:'all .15s',
+            background: tab === t.key ? '#fff' : 'transparent',
+            color: tab === t.key ? '#1A1A2E' : '#6C757D',
+            boxShadow: tab === t.key ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
+            fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif",
+          }}>
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* TAB: SURVEY BARU */}
+      {/* TAB: Survey Baru */}
       {tab === 'new_survey' && (
-        <div>
-          {!iframeUrl ? (
-            <>
-              <p style={{ fontSize:'12px', color:'#6C757D', marginBottom:'16px' }}>Pilih jenis survey untuk dibuka langsung di sini. Gunakan saat bertemu calon nasabah atau rekrutan.</p>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'20px' }}>
-                {[
-                  { type:'selling', icon:'🏦', title:'ProfilKu Finansial', desc:'Survey untuk calon nasabah. Mengetahui profil keuangan dan kebutuhan asuransi.', color:'#ED1B2E', bg:'#FFF0F1' },
-                  { type:'recruiting', icon:'🤝', title:'ProfilKu Peluang', desc:'Survey untuk calon rekrutan. Mengetahui profil karier dan potensi sebagai agen.', color:'#2563EB', bg:'#EFF6FF' },
-                ].map(s => (
-                  <div key={s.type} onClick={() => openSurvey(s.type)}
-                    style={{ background:'white', borderRadius:'12px', border:`2px solid #E9ECEF`, padding:'20px', cursor:'pointer', transition:'all .15s', textAlign:'center' }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor=s.color; e.currentTarget.style.background=s.bg }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor='#E9ECEF'; e.currentTarget.style.background='white' }}>
-                    <div style={{ fontSize:'36px', marginBottom:'10px' }}>{s.icon}</div>
-                    <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:'15px', fontWeight:'700', color:'#1A1A2E', marginBottom:'6px' }}>{s.title}</div>
-                    <p style={{ fontSize:'12px', color:'#6C757D', lineHeight:'1.5' }}>{s.desc}</p>
-                    <div style={{ marginTop:'14px', padding:'8px 16px', background:s.color, color:'white', borderRadius:'8px', fontSize:'12px', fontWeight:'700', display:'inline-block' }}>
-                      Buka Survey →
-                    </div>
-                  </div>
-                ))}
+        <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
+          <p style={{ fontSize:'13px', color:'#6C757D', margin:0 }}>
+            Generate link survey dan bagikan ke calon nasabah atau rekrutan via WhatsApp. Link berlaku 24 jam.
+          </p>
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+            {[
+              { type:'selling',    icon:'💼', label:'ProfilKu Finansial', desc:'Untuk calon nasabah — profil kepribadian & keuangan', color:'#7F77DD', light:'#EEEDFE' },
+              { type:'recruiting', icon:'🌱', label:'ProfilKu Peluang',   desc:'Untuk calon agen — potensi & kesiapan karir', color:'#1D9E75', light:'#E6F9F3' },
+            ].map(opt => (
+              <button key={opt.type} onClick={() => generateLink(opt.type)} disabled={!!generating}
+                style={{ background:'#fff', border:`2px solid ${opt.light}`, borderRadius:'14px', padding:'20px 16px', cursor: generating ? 'not-allowed' : 'pointer', textAlign:'left', transition:'all .15s', opacity: generating ? 0.7 : 1, fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif" }}>
+                <div style={{ fontSize:'28px', marginBottom:'8px' }}>{opt.icon}</div>
+                <div style={{ fontSize:'14px', fontWeight:'700', color:'#1A1A2E', marginBottom:'4px' }}>{opt.label}</div>
+                <div style={{ fontSize:'12px', color:'#6C757D', lineHeight:1.5 }}>{opt.desc}</div>
+                {generating === opt.type && (
+                  <div style={{ fontSize:'12px', color: opt.color, marginTop:'8px', fontWeight:'600' }}>Membuat link...</div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {generatedLink && (
+            <div style={{ background:'#fff', border:'1px solid #E9ECEF', borderRadius:'14px', padding:'20px' }}>
+              <div style={{ fontSize:'12px', fontWeight:'600', color:'#ADB5BD', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'8px' }}>
+                Link {generatedLink.type === 'selling' ? 'ProfilKu Finansial' : 'ProfilKu Peluang'} siap ✅
               </div>
-              <div style={{ background:'#F8F9FA', border:'1px solid #E9ECEF', borderRadius:'11px', padding:'14px 16px' }}>
-                <div style={{ fontSize:'12px', fontWeight:'600', color:'#343A40', marginBottom:'8px' }}>💡 Cara Penggunaan</div>
-                <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
-                  {['Pilih jenis survey sesuai tipe prospek (Nasabah atau Rekrutan)','Survey terbuka langsung di halaman ini — minta prospek mengisi di HP atau laptop kamu','Setelah selesai, hasil otomatis muncul di tab "Hasil Survey"','Import hasil survey sebagai prospek baru dengan 1 klik'].map((s, i) => (
-                    <div key={i} style={{ display:'flex', gap:'8px', fontSize:'12px', color:'#6C757D' }}>
-                      <span style={{ color:'#ED1B2E', fontWeight:'700', flexShrink:0 }}>{i+1}.</span>
-                      <span>{s}</span>
-                    </div>
-                  ))}
-                </div>
+              <div style={{ background:'#F8F9FA', borderRadius:'8px', padding:'10px 14px', fontSize:'13px', color:'#343A40', fontFamily:'monospace', wordBreak:'break-all', marginBottom:'14px' }}>
+                {generatedLink.url}
               </div>
-            </>
-          ) : (
-            <div>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
-                <div style={{ fontSize:'13px', fontWeight:'600', color:'#1A1A2E' }}>Survey aktif</div>
-                <button onClick={() => setIframeUrl('')} className="pa-btn pa-btn-outline pa-btn-sm">← Kembali</button>
+              <div style={{ display:'flex', gap:'8px' }}>
+                <button onClick={copyLink} style={{ flex:1, padding:'11px', border:'1px solid #E9ECEF', borderRadius:'8px', background: copied ? '#EAF3DE' : '#fff', color: copied ? '#27500A' : '#343A40', fontSize:'13px', fontWeight:'600', cursor:'pointer', fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif" }}>
+                  {copied ? '✓ Tersalin!' : '📋 Copy Link'}
+                </button>
+                <button onClick={shareWA} style={{ flex:1, padding:'11px', border:'none', borderRadius:'8px', background:'#25D366', color:'#fff', fontSize:'13px', fontWeight:'700', cursor:'pointer', fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif" }}>
+                  💬 Share WA
+                </button>
               </div>
-              <div style={{ borderRadius:'11px', overflow:'hidden', border:'1px solid #E9ECEF', height:'calc(100vh - 220px)' }}>
-                <iframe src={iframeUrl} style={{ width:'100%', height:'100%', border:'none' }} title="KenalDiri Survey" />
-              </div>
+              <button onClick={() => { setGeneratedLink(null) }} style={{ width:'100%', marginTop:'8px', padding:'8px', border:'none', background:'transparent', fontSize:'12px', color:'#ADB5BD', cursor:'pointer' }}>
+                Buat link lain
+              </button>
             </div>
           )}
         </div>
       )}
 
-      {/* TAB: HASIL SURVEY */}
+      {/* TAB: Hasil Survey */}
       {tab === 'results' && (
         <div>
-          {loading ? (
-            <div style={{ textAlign:'center', padding:'60px', color:'#ADB5BD', fontSize:'13px' }}>Memuat hasil survey...</div>
-          ) : surveys.length === 0 ? (
-            <div style={{ background:'white', borderRadius:'11px', border:'1px solid #E9ECEF', padding:'50px', textAlign:'center' }}>
-              <div style={{ fontSize:'32px', marginBottom:'12px' }}>📋</div>
-              <div style={{ fontSize:'13px', color:'#ADB5BD' }}>Belum ada survey yang selesai. Ajak prospek untuk mengisi survey KenalDiri.</div>
+          {unprocessed > 0 && (
+            <div style={{ background:'#FFF4E5', border:'1px solid #FED7AA', borderRadius:'10px', padding:'12px 16px', marginBottom:'16px', fontSize:'13px', color:'#92400E', fontWeight:'500' }}>
+              ⚡ {unprocessed} survey belum diimport sebagai prospek.
             </div>
+          )}
+          {loading ? (
+            <div style={{ textAlign:'center', padding:'60px', color:'#ADB5BD', fontSize:'13px' }}>Memuat...</div>
+          ) : surveys.length === 0 ? (
+            <div style={{ textAlign:'center', padding:'60px', color:'#ADB5BD', fontSize:'13px' }}>Belum ada survey yang selesai diisi.</div>
           ) : (
-            <>
-              {unimported.length > 0 && (
-                <div style={{ background:'#FFF0F1', border:'1px solid #FDDDE0', borderRadius:'11px', padding:'12px 16px', marginBottom:'14px', display:'flex', alignItems:'center', gap:'10px' }}>
-                  <span style={{ color:'#ED1B2E', fontSize:'16px' }}>⚡</span>
-                  <div style={{ fontSize:'13px', color:'#C0141F', fontWeight:'600' }}>{unimported.length} survey belum diimport sebagai prospek.</div>
-                </div>
-              )}
-              <div style={{ background:'white', borderRadius:'11px', border:'1px solid #E9ECEF', overflow:'hidden' }}>
-                <div style={{ overflowX:'auto' }}>
-                  <table style={{ width:'100%', borderCollapse:'collapse', minWidth:'600px' }}>
-                    <thead>
-                      <tr>
-                        {['Nama','Tipe Survey','Profil','Waktu','Status','Aksi'].map(h => (
-                          <th key={h} style={{ padding:'9px 12px', textAlign:'left', fontSize:'10px', fontWeight:'700', color:'#ADB5BD', textTransform:'uppercase', letterSpacing:'.5px', background:'#F8F9FA', borderBottom:'1px solid #E9ECEF', whiteSpace:'nowrap' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {surveys.map(s => {
-                        const isImported = importedIds.has(s.id)
-                        return (
-                          <tr key={s.id} style={{ background: !isImported ? '#FAFAFA' : 'white' }}>
-                            <td style={{ padding:'11px 12px', borderBottom:'1px solid #F1F3F5' }}>
-                              <div style={{ fontWeight:'600', color:'#1A1A2E', fontSize:'13px' }}>{s.prospect_name || '—'}</div>
-                              <div style={{ fontSize:'10px', color:'#ADB5BD', marginTop:'2px' }}>#{s.id.slice(0,8)}</div>
-                            </td>
-                            <td style={{ padding:'11px 12px', borderBottom:'1px solid #F1F3F5' }}>
-                              <span style={{ background: s.survey_type==='selling'?'#FFF0F1':'#EFF6FF', color: s.survey_type==='selling'?'#ED1B2E':'#2563EB', padding:'3px 8px', borderRadius:'20px', fontSize:'11px', fontWeight:'600' }}>
-                                {s.survey_type === 'selling' ? '💰 ProfilKu Finansial' : '🤝 ProfilKu Peluang'}
-                              </span>
-                            </td>
-                            <td style={{ padding:'11px 12px', borderBottom:'1px solid #F1F3F5', fontSize:'12px', color:'#6C757D' }}>
-                              {PROFILE_LABEL[s.survey_responses?.personality_type] || s.survey_responses?.personality_type || '—'}
-                            </td>
-                            <td style={{ padding:'11px 12px', borderBottom:'1px solid #F1F3F5', fontSize:'11px', color:'#ADB5BD', whiteSpace:'nowrap' }}>
-                              {s.completed_at ? new Date(s.completed_at).toLocaleDateString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—'}
-                            </td>
-                            <td style={{ padding:'11px 12px', borderBottom:'1px solid #F1F3F5' }}>
-                              {isImported
-                                ? <span style={{ background:'#ECFDF3', color:'#059669', padding:'3px 8px', borderRadius:'20px', fontSize:'11px', fontWeight:'600' }}>✓ Sudah diimport</span>
-                                : <span style={{ background:'#FEF3C7', color:'#D97706', padding:'3px 8px', borderRadius:'20px', fontSize:'11px', fontWeight:'600' }}>Belum diproses</span>
-                              }
-                            </td>
-                            <td style={{ padding:'11px 12px', borderBottom:'1px solid #F1F3F5' }}>
-                              {isImported
-                                ? <span style={{ fontSize:'11px', color:'#ADB5BD' }}>—</span>
-                                : <button onClick={() => importAsProspect(s)} disabled={importing === s.id} className="pa-btn pa-btn-red pa-btn-sm" style={{ opacity: importing===s.id ? .7 : 1 }}>
-                                    {importing === s.id ? 'Mengimport...' : '+ Tambah ke List'}
-                                  </button>
-                              }
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+            <div style={{ background:'#fff', borderRadius:'12px', border:'1px solid #E9ECEF', overflow:'hidden' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1.5fr 1.2fr 1.5fr 1fr 1fr 1fr', padding:'10px 16px', background:'#F8F9FA', borderBottom:'1px solid #E9ECEF' }}>
+                {['NAMA','TIPE SURVEY','PROFIL','WAKTU','STATUS','AKSI'].map(h => (
+                  <div key={h} style={{ fontSize:'10px', fontWeight:'700', color:'#ADB5BD', letterSpacing:'0.06em' }}>{h}</div>
+                ))}
               </div>
-            </>
+              {surveys.map(s => {
+                const resp = s.survey_responses
+                const imported = importedIds.has(s.id)
+                const isCareer = s.survey_type === 'recruiting'
+                return (
+                  <div key={s.id} onClick={() => openPanel(s)}
+                    style={{ display:'grid', gridTemplateColumns:'1.5fr 1.2fr 1.5fr 1fr 1fr 1fr', padding:'14px 16px', borderBottom:'1px solid #F1F3F5', cursor:'pointer', transition:'background .1s' }}
+                    onMouseEnter={e => e.currentTarget.style.background='#FAFAFA'}
+                    onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                    <div>
+                      <div style={{ fontSize:'13px', fontWeight:'600', color:'#1A1A2E' }}>{s.prospect_name || '—'}</div>
+                      <div style={{ fontSize:'11px', color:'#ADB5BD' }}>#{s.id.slice(0,8)}</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize:'11px', fontWeight:'600', padding:'3px 8px', borderRadius:'99px', background: isCareer ? '#E6F9F3' : '#EEEDFE', color: isCareer ? '#085041' : '#3C3489' }}>
+                        {isCareer ? '🌱 ProfilKu Peluang' : '💼 ProfilKu Finansial'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize:'12px', color:'#495057', alignSelf:'center' }}>
+                      {PROFILE_LABEL[resp?.personality_type] || resp?.personality_type || '—'}
+                    </div>
+                    <div style={{ fontSize:'12px', color:'#ADB5BD', alignSelf:'center' }}>
+                      {s.completed_at ? new Date(s.completed_at).toLocaleDateString('id-ID', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—'}
+                    </div>
+                    <div style={{ alignSelf:'center' }}>
+                      {imported
+                        ? <span style={{ fontSize:'11px', fontWeight:'600', color:'#059669', background:'#D1FAE5', padding:'3px 8px', borderRadius:'99px' }}>✓ Sudah diimport</span>
+                        : <span style={{ fontSize:'11px', fontWeight:'600', color:'#D97706', background:'#FEF3C7', padding:'3px 8px', borderRadius:'99px' }}>Belum diproses</span>
+                      }
+                    </div>
+                    <div style={{ alignSelf:'center' }} onClick={e => { e.stopPropagation(); if (!imported) handleImport(s) }}>
+                      {!imported && (
+                        <button style={{ fontSize:'11px', fontWeight:'700', padding:'6px 12px', borderRadius:'8px', border:'none', background:'#C0392B', color:'#fff', cursor:'pointer', fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif" }}>
+                          + Tambah ke List
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
+      )}
+
+      {/* Result Panel */}
+      {panel && (
+        <ResultPanel
+          survey={panel.survey}
+          response={panel.response}
+          onClose={() => setPanel(null)}
+          onImport={handleImport}
+          importing={importing}
+        />
       )}
     </AgentShell>
   )
