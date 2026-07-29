@@ -165,6 +165,7 @@ export default function AgentShell({ children, agent, pageTitle, onAddProspek, n
     { path: '/agent/reminder',  label: 'Reminder',      icon: '🔔', badge: reminders.length || null },
     { path: '/agent/rekap',     label: 'Rekap Bulanan', icon: '📈', section: 'Laporan & Info' },
     { path: '/agent/kenaldiri', label: 'KenalDiri Survey', icon: '🔗', section: 'Integrasi', badgeGreen: true },
+    { path: 'https://app.sellingkit.id', label: 'Buat Simulasi Premi', icon: '🧮', external: true },
   ]
 
   const initial = (agent?.full_name?.[0] || 'A').toUpperCase()
@@ -201,19 +202,33 @@ export default function AgentShell({ children, agent, pageTitle, onAddProspek, n
             <div key={item.path}>
               {item.section && <div className="pa-nav-section">{item.section}</div>}
               {i === 0 && <div className="pa-nav-section">Menu Utama</div>}
-              <Link
-                to={item.path}
-                className={`pa-nav-item${isActive(item.path) ? ' active' : ''}`}
-                onClick={() => setMobileOpen(false)}
-              >
-                <span className="pa-nav-icon">{item.icon}</span>
-                {item.label}
-                {(item.badge || item.badgeGreen) && (
-                  <span className={`pa-nav-badge${item.badgeGreen ? ' green' : ''}`}>
-                    {item.badge || '●'}
-                  </span>
-                )}
-              </Link>
+              {item.external ? (
+                <a
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pa-nav-item"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span className="pa-nav-icon">{item.icon}</span>
+                  {item.label}
+                  <span className="pa-nav-badge" style={{ background:'rgba(255,255,255,.1)' }}>↗</span>
+                </a>
+              ) : (
+                <Link
+                  to={item.path}
+                  className={`pa-nav-item${isActive(item.path) ? ' active' : ''}`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span className="pa-nav-icon">{item.icon}</span>
+                  {item.label}
+                  {(item.badge || item.badgeGreen) && (
+                    <span className={`pa-nav-badge${item.badgeGreen ? ' green' : ''}`}>
+                      {item.badge || '●'}
+                    </span>
+                  )}
+                </Link>
+              )}
             </div>
           ))}
         </nav>
