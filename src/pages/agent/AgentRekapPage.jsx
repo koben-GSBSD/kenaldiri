@@ -31,6 +31,8 @@ export default function AgentRekapPage() {
     let q = supabase.from('prospects').select('*, agents(full_name)')
       .gte('created_at', start).lte('created_at', end)
     if (view === 'self' || !ag.is_admin) q = q.eq('agent_id', ag.id)
+    else if (view === 'agent' && selectedAgent) q = q.eq('agent_id', selectedAgent)
+    else if (view === 'agent' && !selectedAgent) q = q.eq('agent_id', '00000000-0000-0000-0000-000000000000') // belum pilih agen -> kosongkan
     const { data } = await q
     setProspects(data || [])
 
@@ -40,7 +42,7 @@ export default function AgentRekapPage() {
       setAllAgents(agents || [])
     }
     setLoading(false)
-  }, [month, year, view])
+  }, [month, year, view, selectedAgent])
 
   useEffect(() => { if (agent) load(agent) }, [agent, load])
 
@@ -127,10 +129,25 @@ export default function AgentRekapPage() {
     <AgentShell agent={agent} pageTitle="Rekap Bulanan">
       {/* Header controls */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'16px', flexWrap:'wrap', gap:'10px' }}>
-        <div style={{ display:'flex', gap:'3px', background:'#F1F3F5', padding:'4px', borderRadius:'10px' }}>
-          <button onClick={() => setView('self')} style={{ padding:'6px 13px', borderRadius:'7px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border:'none', background: view==='self'?'white':'transparent', color: view==='self'?'#1A1A2E':'#6C757D', boxShadow: view==='self'?'0 1px 3px rgba(0,0,0,.1)':'none' }}>Aktivitas Saya</button>
-          {agent?.is_admin && (
-            <button onClick={() => setView('all')} style={{ padding:'6px 13px', borderRadius:'7px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border:'none', background: view==='all'?'white':'transparent', color: view==='all'?'#1A1A2E':'#6C757D', boxShadow: view==='all'?'0 1px 3px rgba(0,0,0,.1)':'none' }}>👑 Semua Agen</button>
+        <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
+          <div style={{ display:'flex', gap:'3px', background:'#F1F3F5', padding:'4px', borderRadius:'10px' }}>
+            <button onClick={() => setView('self')} style={{ padding:'6px 13px', borderRadius:'7px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border:'none', background: view==='self'?'white':'transparent', color: view==='self'?'#1A1A2E':'#6C757D', boxShadow: view==='self'?'0 1px 3px rgba(0,0,0,.1)':'none' }}>Aktivitas Saya</button>
+            {agent?.is_admin && (
+              <>
+                <button onClick={() => setView('all')} style={{ padding:'6px 13px', borderRadius:'7px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border:'none', background: view==='all'?'white':'transparent', color: view==='all'?'#1A1A2E':'#6C757D', boxShadow: view==='all'?'0 1px 3px rgba(0,0,0,.1)':'none' }}>👑 Semua Agen</button>
+                <button onClick={() => setView('agent')} style={{ padding:'6px 13px', borderRadius:'7px', fontSize:'12px', fontWeight:'600', cursor:'pointer', border:'none', background: view==='agent'?'white':'transparent', color: view==='agent'?'#1A1A2E':'#6C757D', boxShadow: view==='agent'?'0 1px 3px rgba(0,0,0,.1)':'none' }}>🔎 Agen Tertentu</button>
+              </>
+            )}
+          </div>
+          {/* Selector agen — hanya saat view === 'agent' */}
+          {agent?.is_admin && view === 'agent' && (
+            <select
+              value={selectedAgent || ''}
+              onChange={e => setSelectedAgent(e.target.value)}
+              style={{ padding:'7px 12px', border:'1px solid #E9ECEF', borderRadius:'8px', fontSize:'12px', outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">Pilih Agen...</option>
+              {allAgents.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
+            </select>
           )}
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
@@ -157,6 +174,8 @@ export default function AgentRekapPage() {
 
       {(!agent?.is_admin || weekView === 'monthly') && (loading ? (
         <div style={{ textAlign:'center', padding:'60px', color:'#ADB5BD', fontSize:'13px' }}>Memuat rekap...</div>
+      ) : view === 'agent' && !selectedAgent ? (
+        <div style={{ textAlign:'center', padding:'60px', color:'#ADB5BD', fontSize:'13px' }}>Pilih agen untuk melihat rekap bulanannya.</div>
       ) : (
         <>
           {/* STAT CARDS */}
