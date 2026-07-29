@@ -31,6 +31,7 @@ export default function AgentDashboardPage() {
   const [todayReminders, setTodayR]  = useState([])
   const [showModal, setShowModal]    = useState(false)
   const [loading, setLoading]        = useState(true)
+  const [unprocessedSurveys, setUnprocessedSurveys] = useState(0)
 
   const loadData = useCallback(async (ag) => {
     if (!ag) return
@@ -68,6 +69,15 @@ export default function AgentDashboardPage() {
     if (!ag.is_admin) rq = rq.eq('agent_id', ag.id)
     const { data: reminders } = await rq
     setTodayR(reminders || [])
+
+    // Hitung survey selesai belum diimport
+    let sq = supabase.from('survey_links').select('id', { count: 'exact' }).eq('status', 'completed')
+    if (!ag.is_admin) sq = sq.eq('agent_id', ag.id)
+    const { count: surveyCount } = await sq
+    // Cek yang sudah diimport
+    const { count: importedCount } = await supabase.from('prospects').select('survey_link_id', { count: 'exact' }).not('survey_link_id', 'is', null)
+    setUnprocessedSurveys((surveyCount || 0) - (importedCount || 0))
+
     setLoading(false)
   }, [])
 
@@ -117,6 +127,24 @@ export default function AgentDashboardPage() {
                 <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:'28px', fontWeight:'800', color:'#1A1A2E', lineHeight:'1', marginBottom:'4px' }}>{c.value}</div>
               </div>
             ))}
+          </div>
+
+          {/* SHORTCUT KENALDIRI */}
+          <div onClick={() => navigate('/agent/kenaldiri?tab=results')}
+            style={{ background: unprocessedSurveys > 0 ? '#EEEDFE' : '#fff', border: unprocessedSurveys > 0 ? '1.5px solid #7F77DD' : '1px solid #E9ECEF', borderRadius:'12px', padding:'16px 18px', cursor:'pointer', display:'flex', alignItems:'center', gap:'14px', marginBottom:'20px', transition:'all .15s' }}>
+            <div style={{ fontSize:'28px' }}>🔗</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:'14px', fontWeight:'700', color:'#1A1A2E' }}>KenalDiri</div>
+              <div style={{ fontSize:'12px', color:'#6C757D', marginTop:'2px' }}>
+                {unprocessedSurveys > 0 ? `${unprocessedSurveys} survey belum diproses` : 'Semua survey sudah diproses'}
+              </div>
+            </div>
+            {unprocessedSurveys > 0 && (
+              <div style={{ background:'#C0392B', color:'#fff', borderRadius:'99px', minWidth:'24px', height:'24px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'700', padding:'0 6px' }}>
+                {unprocessedSurveys}
+              </div>
+            )}
+            <div style={{ color:'#ADB5BD', fontSize:'16px' }}>→</div>
           </div>
 
           {/* PIPELINE + REMINDER */}
