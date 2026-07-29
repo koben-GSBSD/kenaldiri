@@ -232,6 +232,36 @@ const CSS = `
   .kd-start-btn:active { transform: scale(0.98); opacity: 0.9; }
   .kd-start-btn-financial { background: linear-gradient(135deg, #7F77DD 0%, #9f97f5 100%); }
   .kd-start-btn-career    { background: linear-gradient(135deg, #1D9E75 0%, #34c997 100%); }
+  .kd-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* FORM DATA DIRI */
+  .kd-form-group { margin-bottom: 18px; }
+  .kd-form-label {
+    display: block; font-size: 13px; font-weight: 700; color: #1a1a2e;
+    margin-bottom: 7px;
+  }
+  .kd-form-label span { color: #9ca3af; font-weight: 500; }
+  .kd-form-input {
+    width: 100%; padding: 13px 16px;
+    border: 1.5px solid #e5e7eb; border-radius: 12px;
+    font-size: 15px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    color: #1a1a2e; background: #fff;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  .kd-form-input:focus { border-color: #7F77DD; }
+  .kd-form-input-career:focus { border-color: #1D9E75; }
+  .kd-form-checkbox-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 16px; background: #f8f9fa; border-radius: 12px;
+    margin-bottom: 8px; cursor: pointer;
+  }
+  .kd-form-checkbox-row input { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; }
+  .kd-form-checkbox-row span { font-size: 14px; color: #374151; }
+  .kd-form-error {
+    background: #fceaea; color: #9b1c1c; font-size: 13px;
+    padding: 10px 14px; border-radius: 10px; margin-bottom: 16px;
+  }
 
   /* STATUS SCREENS */
   .kd-status-wrap {
@@ -298,6 +328,9 @@ export default function SurveyPublicPage() {
   const [currentQ, setCurrentQ] = useState(0)
   const [answers, setAnswers] = useState({})
   const [introData, setIntroData] = useState({})
+  const [formData, setFormData]   = useState({ name: '', dob: '', job: '', smoker: false })
+  const [formError, setFormError] = useState('')
+  const [formSaving, setFormSaving] = useState(false)
   const [anim, setAnim] = useState('enter')  // 'enter' | 'exit' | 'back-enter'
   const [ripple, setRipple] = useState(null) // optId yang diklik
   const storageKey = `kenaldiri_${token}`
@@ -343,6 +376,30 @@ export default function SurveyPublicPage() {
         setCurrentQ(parsed.currentQ || 0)
       } catch {}
     }
+    // Kalau nama & tgl lahir belum diisi (link digenerate kosong oleh agent),
+    // minta prospek isi data diri dulu sebelum masuk layar sambutan.
+    if (!data.prospect_name || !data.prospect_dob) {
+      setStatus('form')
+    } else {
+      setStatus('intro')
+    }
+  }
+
+  async function submitForm() {
+    if (!formData.name.trim()) { setFormError('Nama lengkap wajib diisi.'); return }
+    if (!formData.dob) { setFormError('Tanggal lahir wajib diisi.'); return }
+    setFormError('')
+    setFormSaving(true)
+    const updates = {
+      prospect_name: formData.name.trim(),
+      prospect_dob:  formData.dob,
+      prospect_job:  formData.job.trim() || null,
+      prospect_smoker: !!formData.smoker,
+    }
+    const { error } = await supabase.from('survey_links').update(updates).eq('id', link.id)
+    setFormSaving(false)
+    if (error) { setFormError('Gagal menyimpan data. Coba lagi.'); return }
+    setIntroData(prev => ({ ...prev, name: updates.prospect_name, dob: updates.prospect_dob, job: updates.prospect_job, smoker: updates.prospect_smoker }))
     setStatus('intro')
   }
 
@@ -517,6 +574,80 @@ export default function SurveyPublicPage() {
           <div className={`kd-spinner${isCareer ? ' kd-spinner-career' : ''}`} />
           <div className="kd-submit-label">Menganalisa jawabanmu...</div>
         </div>
+      </div>
+    )
+  }
+
+  // ── RENDER: Form data diri (sebelum intro, kalau data prospek belum ada) ──
+  if (status === 'form') {
+    return (
+      <div className={`kd-survey-root kd-bg-${t}`}>
+        <div className="kd-intro-wrap">
+          <div className={`kd-intro-badge kd-intro-badge-${t}`}>
+            {isCareer ? '🌱 ProfilKu Peluang' : '💼 ProfilKu Finansial'}
+          </div>
+          <h1 className="kd-intro-hi">Kenalan dulu, yuk 👋</h1>
+          <p className="kd-intro-sub">
+            Isi data singkat ini supaya hasil profilmu lebih akurat dan agen bisa menghubungimu dengan tepat.
+          </p>
+
+          {formError && <div className="kd-form-error">⚠️ {formError}</div>}
+
+          <div className="kd-form-group">
+            <label className="kd-form-label">Nama Lengkap</label>
+            <input
+              type="text"
+              className="kd-form-input"
+              placeholder="Nama kamu"
+              value={formData.name}
+              onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
+            />
+          </div>
+
+          <div className="kd-form-group">
+            <label className="kd-form-label">Tanggal Lahir</label>
+            <input
+              type="date"
+              className="kd-form-input"
+              value={formData.dob}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={e => setFormData(f => ({ ...f, dob: e.target.value }))}
+            />
+          </div>
+
+          <div className="kd-form-group">
+            <label className="kd-form-label">Pekerjaan <span>(opsional)</span></label>
+            <input
+              type="text"
+              className="kd-form-input"
+              placeholder="Contoh: Karyawan Swasta"
+              value={formData.job}
+              onChange={e => setFormData(f => ({ ...f, job: e.target.value }))}
+            />
+          </div>
+
+          {!isCareer && (
+            <label className="kd-form-checkbox-row">
+              <input
+                type="checkbox"
+                checked={formData.smoker}
+                onChange={e => setFormData(f => ({ ...f, smoker: e.target.checked }))}
+              />
+              <span>Saya adalah perokok aktif</span>
+            </label>
+          )}
+
+          <div style={{ marginTop: '10px' }}>
+            <button
+              className={`kd-start-btn kd-start-btn-${t}`}
+              onClick={submitForm}
+              disabled={formSaving}
+            >
+              {formSaving ? 'Menyimpan...' : 'Lanjutkan →'}
+            </button>
+          </div>
+        </div>
+        <div className="kd-footer">KenalDiri · {isCareer ? 'ProfilKu Peluang' : 'ProfilKu Finansial'}</div>
       </div>
     )
   }
