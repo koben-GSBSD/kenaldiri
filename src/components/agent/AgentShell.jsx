@@ -164,7 +164,6 @@ export default function AgentShell({ children, agent, pageTitle, onAddProspek, n
     { path: '/agent/pipeline',  label: 'Pipeline FU',   icon: '🎯', badge: null },
     { path: '/agent/reminder',  label: 'Reminder',      icon: '🔔', badge: reminders.length || null },
     { path: '/agent/rekap',     label: 'Rekap Bulanan', icon: '📈', section: 'Laporan & Info' },
-    { path: '/agent/produk',    label: 'Produk PRU',    icon: '📋' },
     { path: '/agent/kenaldiri', label: 'KenalDiri Survey', icon: '🔗', section: 'Integrasi', badgeGreen: true },
   ]
 
