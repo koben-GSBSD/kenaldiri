@@ -113,6 +113,13 @@ function injectCSS() {
 }
 
 export default function AgentShell({ children, agent, pageTitle, onAddProspek, notifCount = 0 }) {
+  const [pushEnabled, setPushEnabled] = useState(false)
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      setPushEnabled(Notification.permission === 'granted')
+    }
+  }, [])
   const navigate = useNavigate()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
@@ -252,6 +259,16 @@ export default function AgentShell({ children, agent, pageTitle, onAddProspek, n
             </div>
           </div>
           <div className="pa-topbar-right">
+            <span
+              title={pushEnabled ? 'Push notification aktif' : 'Push notification belum aktif'}
+              style={{
+                fontSize: '13px', lineHeight: 1, marginRight: '2px',
+                opacity: pushEnabled ? 1 : 0.35,
+                filter: pushEnabled ? 'none' : 'grayscale(1)',
+              }}
+            >
+              🔔
+            </span>
             <button className="pa-notif-btn" onClick={(e) => { e.stopPropagation(); setNotifOpen(o => !o) }}>
               🔔
               {todayRemCount > 0 && <span className="pa-notif-dot" />}
