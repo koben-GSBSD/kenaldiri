@@ -1,0 +1,11 @@
+{
+  "name": "PRUActive",
+  "short_name": "PRUActive",
+  "start_url": "/agent/dashboard",
+  "display": "standalone",
+  "background_color": "#F8F9FA",
+  "theme_color": "#7F77DD",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
