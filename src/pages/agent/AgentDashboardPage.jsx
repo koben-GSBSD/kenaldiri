@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useAgent } from '../../hooks/useAgent'
 import AgentShell from '../../components/agent/AgentShell'
 import ProspekModal from '../../components/agent/ProspekModal'
+import NotificationBanner from '../../components/agent/NotificationBanner'
 
 const STAGE_LABEL = {
   fact_finding: 'Fact Finding',
@@ -112,6 +113,8 @@ export default function AgentDashboardPage() {
                 : 'Tidak ada reminder hari ini'}
             </p>
           </div>
+
+          <NotificationBanner />
 
           {/* STAT CARDS */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'12px', marginBottom:'20px' }}>
