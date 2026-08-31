@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
+import { writeWithQueue } from '../../lib/offlineQueue'
 import { useAgent } from '../../hooks/useAgent'
 import AgentShell from '../../components/agent/AgentShell'
 import ProspekModal from '../../components/agent/ProspekModal'
@@ -35,8 +36,8 @@ export default function AgentPipelinePage() {
     const oldStage = prospect.stage
     // Optimistic update
     setProspects(prev => prev.map(p => p.id === prospect.id ? { ...p, stage: newStage } : p))
-    await supabase.from('prospects').update({ stage: newStage }).eq('id', prospect.id)
-    await supabase.from('followup_logs').insert({
+    await writeWithQueue('prospects', 'update', { stage: newStage }, { id: prospect.id })
+    await writeWithQueue('followup_logs', 'insert', {
       prospect_id: prospect.id,
       agent_id: agent.id,
       from_stage: oldStage,
