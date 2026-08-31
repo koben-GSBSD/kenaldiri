@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { writeWithQueue } from '../../lib/offlineQueue'
 
 const SOURCES = ['keluarga','teman','tetangga','media_sosial','komunitas','lainnya']
 const SOURCE_LABEL = { keluarga:'Keluarga', teman:'Teman', tetangga:'Tetangga', media_sosial:'Media Sosial', komunitas:'Komunitas', lainnya:'Lainnya' }
@@ -33,11 +33,13 @@ export default function ProspekModal({ agent, onClose, onSaved, initial = null }
       const payload = { ...form, agent_id: agent.id }
       let err
       if (isEdit) {
-        ;({ error: err } = await supabase.from('prospects').update(payload).eq('id', initial.id))
+        try {
+          await writeWithQueue('prospects', 'update', payload, { id: initial.id })
+        } catch (e) { err = e }
         if (!err) {
           // Log stage change jika berubah
           if (form.stage !== initial.stage) {
-            await supabase.from('followup_logs').insert({
+            await writeWithQueue('followup_logs', 'insert', {
               prospect_id: initial.id,
               agent_id: agent.id,
               from_stage: initial.stage,
@@ -47,7 +49,9 @@ export default function ProspekModal({ agent, onClose, onSaved, initial = null }
           }
         }
       } else {
-        ;({ error: err } = await supabase.from('prospects').insert(payload))
+        try {
+          await writeWithQueue('prospects', 'insert', payload)
+        } catch (e) { err = e }
       }
       if (err) throw err
       onSaved()
