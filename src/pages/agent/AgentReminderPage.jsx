@@ -1,6 +1,7 @@
 // ── AgentReminderPage ──
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
+import { writeWithQueue } from '../../lib/offlineQueue'
 import { useAgent } from '../../hooks/useAgent'
 import AgentShell from '../../components/agent/AgentShell'
 import ReminderModal from '../../components/agent/ReminderModal'
@@ -40,12 +41,12 @@ export function AgentReminderPage() {
   useEffect(() => { if (agent) load(agent) }, [agent, load])
 
   async function markDone(id) {
-    await supabase.from('reminders').update({ is_done:true, done_at: new Date().toISOString() }).eq('id', id)
+    await writeWithQueue('reminders', 'update', { is_done:true, done_at: new Date().toISOString() }, { id })
     setReminders(r => r.map(x => x.id === id ? { ...x, is_done:true } : x))
   }
 
   async function deleteReminder(id) {
-    await supabase.from('reminders').delete().eq('id', id)
+    await writeWithQueue('reminders', 'delete', null, { id })
     setReminders(r => r.filter(x => x.id !== id))
   }
 
