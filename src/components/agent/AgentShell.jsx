@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { subscribeQueueChange } from '../../lib/offlineQueue'
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap');
@@ -114,11 +115,17 @@ function injectCSS() {
 
 export default function AgentShell({ children, agent, pageTitle, onAddProspek, notifCount = 0 }) {
   const [pushEnabled, setPushEnabled] = useState(false)
+  const [queueCount, setQueueCount] = useState(0)
 
   useEffect(() => {
     if ('Notification' in window) {
       setPushEnabled(Notification.permission === 'granted')
     }
+  }, [])
+
+  useEffect(() => {
+    const unsubscribe = subscribeQueueChange(setQueueCount)
+    return unsubscribe
   }, [])
   const navigate = useNavigate()
   const location = useLocation()
@@ -259,6 +266,16 @@ export default function AgentShell({ children, agent, pageTitle, onAddProspek, n
             </div>
           </div>
           <div className="pa-topbar-right">
+            <span
+              title={queueCount > 0 ? `${queueCount} data menunggu dikirim` : 'Semua data tersinkron'}
+              style={{
+                fontSize: '13px', lineHeight: 1, marginRight: '2px',
+                display: 'inline-flex', alignItems: 'center', gap: '2px',
+                color: queueCount > 0 ? '#D97706' : '#ADB5BD',
+              }}
+            >
+              ☁️{queueCount > 0 ? queueCount : ''}
+            </span>
             <span
               title={pushEnabled ? 'Push notification aktif' : 'Push notification belum aktif'}
               style={{
