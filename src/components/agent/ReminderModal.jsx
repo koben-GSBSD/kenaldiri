@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { writeWithQueue } from '../../lib/offlineQueue'
 
 const STAGE_LABEL = { fact_finding:'Fact Finding', fu1:'FU 1', fu2:'FU 2', presentasi:'Presentasi', closing:'Closing' }
 
@@ -19,13 +19,16 @@ export default function ReminderModal({ agent, prospect, onClose, onSaved }) {
     if (!date || !time) { setError('Tanggal dan jam wajib diisi'); return }
     setSaving(true); setError('')
     const remind_at = new Date(`${date}T${time}:00`).toISOString()
-    const { error: err } = await supabase.from('reminders').insert({
-      prospect_id: prospect.id,
-      agent_id:    agent.id,
-      remind_at,
-      label:       label.trim() || null,
-    })
-    if (err) { setError(err.message); setSaving(false); return }
+    try {
+      await writeWithQueue('reminders', 'insert', {
+        prospect_id: prospect.id,
+        agent_id:    agent.id,
+        remind_at,
+        label:       label.trim() || null,
+      })
+    } catch (err) {
+      setError(err.message || 'Gagal menyimpan'); setSaving(false); return
+    }
     onSaved()
   }
 
