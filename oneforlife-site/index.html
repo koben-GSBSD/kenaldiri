@@ -9,6 +9,21 @@
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://oneforlife.id/">
 
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-EQQTECM5B4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-EQQTECM5B4');
+</script>
+<!-- End Google Analytics 4 -->
+
+<!-- Vercel Web Analytics -->
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<!-- End Vercel Web Analytics -->
+
 <!-- Open Graph / Social Preview -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="oneforlife.id">
@@ -912,6 +927,14 @@ src="https://www.facebook.com/tr?id=567667987276508&ev=PageView&noscript=1"
           });
         }
 
+        // GA4: catat sebagai generate_lead (setara dengan Lead di Meta Pixel)
+        if(typeof gtag !== 'undefined'){
+          gtag('event', 'generate_lead', {
+            content_name: need,
+            content_category: 'Konsultasi Proteksi'
+          });
+        }
+
         window.open('https://wa.me/' + waNumber + '?text=' + text, '_blank');
       });
     }
@@ -924,6 +947,9 @@ src="https://www.facebook.com/tr?id=567667987276508&ev=PageView&noscript=1"
     el.addEventListener('click', function(){
       if(typeof fbq !== 'undefined'){
         fbq('track', 'Contact');
+      }
+      if(typeof gtag !== 'undefined'){
+        gtag('event', 'contact', { method: 'whatsapp' });
       }
     });
   });
