@@ -43,7 +43,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        h1, h2, h3, h4 {
+        h1, h2, h3, h4, .serif-font {
             font-family: 'Fraunces', serif;
             color: var(--navy);
         }
@@ -51,6 +51,10 @@
         a {
             text-decoration: none;
             color: inherit;
+        }
+
+        ul {
+            list-style: none;
         }
 
         .wrap {
@@ -108,22 +112,22 @@
         .hero-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 48px;
+            gap: 40px;
             align-items: center;
         }
-
-        /* Image Styling */
-        .hero-image {
-            width: 100%;
+        
+        /* Hero Image - Proportional Layout */
+        .hero-img-wrap {
             display: flex;
             justify-content: center;
+            width: 100%;
         }
         
-        .hero-image img {
+        .hero-img-wrap img {
             width: 100%;
-            max-width: 500px; /* Kept proportional based on 648x810 ratio */
+            max-width: 480px; /* Menyesuaikan agar tidak terlalu besar di desktop */
             height: auto;
-            border-radius: var(--radius-lg);
+            border-radius: 20px;
             box-shadow: 0 20px 40px -15px rgba(26,26,46,0.15);
             object-fit: cover;
         }
@@ -187,21 +191,17 @@
             border: 1px solid var(--line);
             padding: 36px;
             box-shadow: 0 20px 50px -15px rgba(26,26,46,0.1);
-            max-width: 600px;
-            margin: 0 auto 60px;
         }
 
         .form-card h3 {
             font-size: 22px;
             margin-bottom: 8px;
-            text-align: center;
         }
 
         .form-card p {
             font-size: 13.5px;
             color: var(--ink-soft);
             margin-bottom: 24px;
-            text-align: center;
         }
 
         .field {
@@ -216,7 +216,7 @@
             color: var(--navy);
         }
 
-        .field input, .field select {
+        .field input, .field select, .field textarea {
             width: 100%;
             padding: 13px 16px;
             border: 1.5px solid var(--line);
@@ -228,11 +228,19 @@
             transition: 0.2s;
         }
 
-        .field input:focus, .field select:focus {
+        .field input:focus, .field select:focus, .field textarea:focus {
             outline: none;
             border-color: var(--gold);
             background: var(--white);
             box-shadow: 0 0 0 3px rgba(212,168,67,0.15);
+        }
+
+        .form-note {
+            font-size: 11.5px;
+            color: var(--ink-soft);
+            margin-top: 16px;
+            text-align: center;
+            line-height: 1.4;
         }
 
         /* Sections */
@@ -257,11 +265,16 @@
         }
 
         .sec-head h2 {
-            font-size: 32px;
+            font-size: 34px;
             margin-bottom: 12px;
         }
 
-        /* Features Grid */
+        .sec-head p {
+            color: var(--ink-soft);
+            font-size: 15px;
+        }
+
+        /* Grid */
         .grid-3 {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -275,6 +288,7 @@
             padding: 30px;
             transition: 0.2s;
             position: relative;
+            overflow: hidden;
         }
 
         .feature-card:hover {
@@ -308,26 +322,91 @@
             border-radius: 20px;
         }
 
-        /* Custom WhatsApp Button (Image) */
-        .fab-wa-img {
+        /* Table */
+        .specs-box {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 10px 30px -15px rgba(26,26,46,0.05);
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        th {
+            background: var(--cream-2);
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        /* Timeline / Benefits */
+        .benefits-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .benefit-box {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-md);
+            padding: 24px 28px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .benefit-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--navy);
+            color: var(--white);
+            font-family: 'Fraunces', serif;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+
+        /* Floating Custom WA Button */
+        .fab-custom-wa {
             position: fixed;
             bottom: 24px;
             right: 24px;
             z-index: 999;
-            transition: 0.3s;
-            display: block;
-            width: 180px; /* Adjusted size for readability */
+            transition: transform 0.3s ease;
+            width: 160px; /* Ukuran proporsional, tidak terlalu mengganggu layar */
         }
         
-        .fab-wa-img img {
+        .fab-custom-wa img {
             width: 100%;
             height: auto;
-            border-radius: 30px; /* Assuming rounded shape or adjust if strictly rectangular */
+            border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
 
-        .fab-wa-img:hover {
-            transform: scale(1.05) translateY(-5px);
+        .fab-custom-wa:hover {
+            transform: translateY(-4px) scale(1.05);
         }
 
         /* Responsive Design */
@@ -336,8 +415,8 @@
                 grid-template-columns: 1fr;
                 gap: 30px;
             }
-            .hero-image {
-                order: -1; /* Image on top for mobile */
+            .hero-img-wrap {
+                order: -1; /* Gambar naik ke atas di layar HP */
             }
             .grid-3 {
                 grid-template-columns: 1fr;
@@ -345,15 +424,17 @@
             .hero-content h1 {
                 font-size: 32px;
             }
-            .fab-wa-img {
-                width: 150px; /* Smaller on mobile */
-                bottom: 16px;
-                right: 16px;
+            .fab-custom-wa {
+                width: 130px; /* Sedikit dikecilkan di HP agar tidak menghalangi konten */
+                bottom: 20px;
+                right: 20px;
             }
         }
     </style>
 </head>
 <body>
+
+    <!-- Header Removed based on user request -->
 
     <!-- Hero Section -->
     <section class="hero">
@@ -364,23 +445,57 @@
                 </div>
                 <h1>Asuransi Jiwa <em>PRUProsper</em><br>Kupastikan Jaga Terus Langkah Rencana Kita</h1>
                 <p class="hero-subtitle">
-                    Produk asuransi jiwa dwiguna dalam mata uang USD dari Prudential. Lindungi keluarga lintas generasi dan nikmati Manfaat Tunai Tahunan pasti 7%.
+                    Produk asuransi jiwa tradisional (dwiguna) dalam mata uang USD dari Prudential Indonesia. Memberikan perlindungan jiwa lintas generasi serta Manfaat Tunai Tahunan pasti sebesar 7%.
                 </p>
                 <div class="hero-features">
                     <div class="hf-item"><span>✓</span> Manfaat Tunai 7% / Tahun</div>
-                    <div class="hf-item"><span>✓</span> Masa Bayar Singkat (5 Th)</div>
+                    <div class="hf-item"><span>✓</span> Masa Bayar Singkat (5 Tahun)</div>
                     <div class="hf-item"><span>✓</span> Tanpa Cek Medis (GIO 1)</div>
-                    <div class="hf-item"><span>✓</span> Diversifikasi Aset USD</div>
+                    <div class="hf-item"><span>✓</span> Mata Uang USD Stabil</div>
                 </div>
                 <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                    <a href="#konsultasi" class="btn btn-red">Dapatkan Penawaran & Simulasi</a>
+                    <a href="#konsultasi" class="btn btn-red">Dapatkan Simulasi Sekarang</a>
                 </div>
             </div>
             
-            <!-- Added Image Illustration -->
-            <div class="hero-image">
-                <!-- Using the specified filename -->
-                <img src="pruprosper-1.png" alt="PRUProsper Illustration">
+            <!-- Tambahan Ilustrasi Gambar -->
+            <div class="hero-img-wrap">
+                <img src="pruprosper-1.png" alt="PRUProsper USD Plan">
+            </div>
+        </div>
+    </section>
+
+    <!-- Form Section - Dipindahkan ke atas sedikit agar leads mudah mengisi -->
+    <section id="konsultasi" style="background: var(--cream-2);">
+        <div class="wrap">
+            <div class="form-card" style="max-width: 600px; margin: 0 auto;">
+                <h3 style="text-align: center;">Dapatkan Simulasi & Penawaran</h3>
+                <p style="text-align: center;">Isi data diri untuk dihubungi oleh konsultan resmi Prudential.</p>
+                <form id="leadForm" action="https://wa.me/6281285724093" method="get" target="_blank">
+                    <div class="field">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="name" placeholder="Nama Sesuai KTP" required>
+                    </div>
+                    <div class="field">
+                        <label>Nomor WhatsApp</label>
+                        <input type="tel" id="phone" placeholder="08xx xxxx xxxx" required>
+                    </div>
+                    <div class="field">
+                        <label>Domisili Kota</label>
+                        <input type="text" id="city" placeholder="Contoh: Jakarta Selatan" required>
+                    </div>
+                    <div class="field">
+                        <label>Waktu Ingin Dihubungi</label>
+                        <select id="time">
+                            <option>08.00 - 11.00</option>
+                            <option>11.00 - 14.00</option>
+                            <option>14.00 - 17.00</option>
+                            <option>17.00 - 20.00</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-red" style="width: 100%; font-size: 15px; padding: 15px;">Kirim Permintaan Konsultasi</button>
+                    <p class="form-note">Dengan menekan tombol di atas, Anda terhubung langsung dengan konsultan resmi Prudential Indonesia via WhatsApp.</p>
+                </form>
             </div>
         </div>
     </section>
@@ -391,70 +506,142 @@
             <div class="sec-head">
                 <span>Keistimewaan Utama</span>
                 <h2>Mengapa Memilih PRUProsper?</h2>
+                <p>Solusi finansial komprehensif untuk perlindungan keluarga sekaligus perencanaan kekayaan jangka panjang.</p>
             </div>
             <div class="grid-3">
                 <div class="feature-card">
                     <span class="badge-highlight">Pasti</span>
                     <div class="icon">💵</div>
-                    <h4>Manfaat Tunai 7%</h4>
-                    <p>Dijamin 7% dari premi tahunan cair tiap tahun (mulai akhir tahun polis ke-3 hingga ke-15).</p>
+                    <h4>Manfaat Tunai Tahunan 7%</h4>
+                    <p>Dibayarkan secara dijamin sebesar 7% dari premi tahunan mulai akhir tahun polis ke-3 hingga akhir masa pertanggungan (tahun ke-15).</p>
                 </div>
                 <div class="feature-card">
                     <div class="icon">🛡️</div>
                     <h4>Proteksi Lintas Generasi</h4>
-                    <p>Bayar premi hanya 5 tahun untuk masa perlindungan optimal selama 15 tahun penuh dalam USD.</p>
+                    <p>Masa pembayaran premi yang singkat (hanya 5 tahun) untuk masa perlindungan jiwa yang optimal selama 15 tahun penuh dalam mata uang USD.</p>
                 </div>
                 <div class="feature-card">
                     <div class="icon">📈</div>
-                    <h4>Manfaat Akhir 113%</h4>
-                    <p>Kepastian kembali 113% dari total premi di akhir masa pertanggungan jika tertanggung masih hidup.</p>
+                    <h4>Manfaat Akhir Pertanggungan</h4>
+                    <p>Mendapatkan kembali 113% dari seluruh premi yang telah dibayarkan secara sekaligus jika tertanggung hidup hingga akhir masa pertanggungan.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Form Lead Generation -->
-    <section style="background: var(--cream);" id="konsultasi">
+    <!-- Detail Produk & Spesifikasi -->
+    <section>
         <div class="wrap">
-            <div class="sec-head" style="margin-bottom: 30px;">
-                <h2>Konsultasi & Simulasi Gratis</h2>
-                <p>Isi form berikut dan konsultan resmi kami akan segera menghubungi Anda via WhatsApp.</p>
+            <div class="sec-head">
+                <span>Spesifikasi Produk</span>
+                <h2>Ringkasan Fitur & Ketentuan PRUProsper</h2>
+                <p>Informasi teknis dan persyaratan kepesertaan sesuai ketentuan resmi Prudential Indonesia.</p>
             </div>
             
-            <div class="form-card">
-                <form id="leadForm" action="https://wa.me/6281285724093" method="get" target="_blank">
-                    <div class="field">
-                        <label>Nama Lengkap</label>
-                        <input type="text" id="name" placeholder="Sesuai KTP" required>
-                    </div>
-                    <div class="field">
-                        <label>Nomor WhatsApp</label>
-                        <input type="tel" id="phone" placeholder="08xx xxxx xxxx" required>
-                    </div>
-                    <div class="field">
-                        <label>Domisili Kota</label>
-                        <input type="text" id="city" placeholder="Contoh: Jakarta" required>
-                    </div>
-                    <button type="submit" class="btn btn-red" style="width: 100%; font-size: 16px; padding: 16px;">Kirim Permintaan Konsultasi</button>
-                    <p style="font-size: 11px; color: var(--ink-soft); margin-top: 16px; text-align: center;">
-                        Dengan klik tombol di atas, Anda akan terhubung langsung ke WhatsApp Konsultan Resmi OneForLife.
-                    </p>
-                </form>
+            <div class="specs-box">
+                <div class="table-responsive">
+                    <table>
+                        <tr>
+                            <th style="width: 35%;">Parameter Produk</th>
+                            <th>Ketentuan Resmi PRUProsper</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Mata Uang</strong></td>
+                            <td>Dolar Amerika Serikat (USD)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Usia Masuk Tertanggung</strong></td>
+                            <td>1 tahun s.d. 65 tahun (ulang tahun berikutnya)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Masa Pembayaran Premi</strong></td>
+                            <td>5 tahun</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Masa Pertanggungan</strong></td>
+                            <td>15 tahun</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ketentuan Premi</strong></td>
+                            <td>Minimum USD2.500/tahun s.d. Maksimum USD200.000/tahun (kelipatan USD100)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Seleksi Risiko</strong></td>
+                            <td>GIO 1 (Guaranteed Issuance Offer / Tanpa pemeriksaan kesehatan sesuai syarat berlaku)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Frekuensi Pembayaran</strong></td>
+                            <td>Tahunan atau Bulanan</td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Floating WhatsApp Button (Custom Image) -->
-    <a href="https://wa.me/6281285724093?text=Halo%20oneforlife,%20saya%20ingin%20konsultasi%20PRUProsper" target="_blank" class="fab-wa-img" title="Konsultasi WhatsApp">
-        <img src="tombolwa.png" alt="Hubungi Kami via WhatsApp">
+    <!-- Rincian Manfaat -->
+    <section style="background: var(--white);">
+        <div class="wrap">
+            <div class="sec-head">
+                <span>Manfaat Perlindungan</span>
+                <h2>Jaminan Kepastian untuk Keluarga</h2>
+            </div>
+            
+            <div class="benefits-timeline">
+                <div class="benefit-box">
+                    <div class="benefit-number">1</div>
+                    <div class="benefit-content">
+                        <h4>Manfaat Meninggal Dunia</h4>
+                        <p>Apabila tertanggung meninggal dunia dalam masa pertanggungan, Prudential akan membayarkan santunan terbaik (102% - 105% dari total premi atau nilai penebusan yang terbentuk, mana yang lebih besar) tanpa masa tunggu.</p>
+                    </div>
+                </div>
+                <div class="benefit-box">
+                    <div class="benefit-number">2</div>
+                    <div class="benefit-content">
+                        <h4>Manfaat Tunai Tahunan (7%)</h4>
+                        <p>Pencairan tunai otomatis sebesar 7% dari premi tahunan setiap akhir tahun polis ke-3 sampai ke-15 selama polis aktif, menjaga likuiditas finansial Anda.</p>
+                    </div>
+                </div>
+                <div class="benefit-box">
+                    <div class="benefit-number">3</div>
+                    <div class="benefit-content">
+                        <h4>Manfaat Akhir Pertanggungan (113%)</h4>
+                        <p>Kepastian pengembalian sebesar 113% dari seluruh premi yang telah dibayarkan secara sekaligus pada akhir tahun polis ke-15 jika tertanggung tetap hidup.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Banner Bawah (Footer Info dihilangkan sesuai permintaan) -->
+    <section style="background: linear-gradient(135deg, var(--navy) 0%, #11111F 100%); color: var(--white); text-align: center; padding: 80px 0;">
+        <div class="wrap" style="max-width: 800px;">
+            <span style="color: var(--gold); font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-size: 13px; display: block; margin-bottom: 12px;">Mulai Perencanaan Finansial Anda Hari Ini</span>
+            <h2 style="color: var(--white); font-size: 36px; margin-bottom: 16px;">Wujudkan Masa Depan Aman Bersama PRUProsper</h2>
+            <p style="color: #9CA3AF; margin-bottom: 32px; font-size: 16px;">Konsultasikan kebutuhan proteksi dan simulasi premi USD Anda dengan agen profesional resmi kami.</p>
+            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+                <a href="#konsultasi" class="btn btn-red" style="font-size: 15px; padding: 15px 30px;">Hubungi Konsultan Sekarang</a>
+            </div>
+            
+            <p style="font-size: 12px; color: #6b7280; margin-top: 50px;">
+                PT Prudential Life Assurance berizin dan diawasi oleh Otoritas Jasa Keuangan (OJK).<br>Hak Cipta &copy; 2026 OneForLife.id
+            </p>
+        </div>
+    </section>
+
+    <!-- Custom Floating WhatsApp Button (Sesuai Gambar) -->
+    <a href="https://wa.me/6281285724093?text=Halo%20oneforlife,%20saya%20ingin%20konsultasi%20PRUProsper" target="_blank" class="fab-custom-wa" title="Konsultasi WhatsApp">
+        <img src="tombolwa.png" alt="Chat WA">
     </a>
 
+    <!-- Simple Script for Form WhatsApp Redirect -->
     <script>
         document.getElementById('leadForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const name = document.getElementById('name').value;
             const phone = document.getElementById('phone').value;
             const city = document.getElementById('city').value;
+            const time = document.getElementById('time').value;
 
             const text = `Halo OneForLife, saya tertarik dengan produk *PRUProsper* Prudential.
 
@@ -462,8 +649,9 @@ Data Diri:
 - Nama: ${name}
 - No. WhatsApp: ${phone}
 - Domisili: ${city}
+- Waktu Dihubungi: ${time}
 
-Mohon info simulasi dan detail lebih lanjut.`;
+Mohon info simulasi dan detail lebih lanjut. Terima kasih.`;
             const encodedText = encodeURIComponent(text);
             window.open(`https://wa.me/6281285724093?text=${encodedText}`, '_blank');
         });
