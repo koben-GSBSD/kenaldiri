@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRUProsper — Asuransi Jiwa Tradisional Dwiguna USD | OneForLife x Prudential</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS Reset & Variables based on oneforlife.id */
+        :root {
+            --navy: #1A1A2E;
+            --navy-dark: #11111F;
+            --red: #ED1B2D;
+            --red-hover: #D01424;
+            --gold: #D4A843;
+            --gold-light: #FBF6E9;
+            --cream: #F8F9FA;
+            --cream-2: #F0F2F5;
+            --white: #FFFFFF;
+            --ink: #1F2937;
+            --ink-soft: #4B5563;
+            --line: #E5E7EB;
+            --glass-light-bg: rgba(255,255,255,.55);
+            --glass-light-border: rgba(255,255,255,.65);
+            --glass-navy-bg: rgba(26,26,46,.62);
+            --glass-navy-border: rgba(255,255,255,.14);
+            --glass-blur: 18px;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--ink);
+            background-color: var(--cream);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, .serif-font {
+            font-family: 'Fraunces', serif;
+            color: var(--navy);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Glassmorphism Classes */
+        .glass {
+            background: var(--glass-light-bg);
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-light-border);
+            box-shadow: 0 18px 42px -22px rgba(26,26,46,.35), inset 0 1px 0 rgba(255,255,255,.5);
+        }
+
+        .glass-dark {
+            background: var(--glass-navy-bg);
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-navy-border);
+            box-shadow: 0 20px 48px -20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 100px;
+            font-weight: 700;
+            font-size: 14.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            touch-action: manipulation;
+        }
+
+        .btn-red {
+            background-color: var(--red);
+            color: var(--white);
+            box-shadow: 0 10px 25px -8px rgba(237,27,45,0.5);
+        }
+
+        .btn-red:hover {
+            background-color: var(--red-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px -6px rgba(237,27,45,0.6);
+        }
+
+        .btn-wa {
+            background-color: #25D366;
+            color: var(--white);
+            box-shadow: 0 10px 25px -8px rgba(37,211,102,0.4);
+        }
+
+        .btn-wa:hover {
+            background-color: #20ba5a;
+            transform: translateY(-2px);
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            border: 1.5px solid var(--line);
+            color: var(--navy);
+        }
+
+        .btn-ghost:hover {
+            background-color: var(--cream-2);
+            border-color: var(--navy);
+        }
+
+        /* Header / Navbar */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(248, 249, 250, 0.85);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--line);
+            padding: 16px 0;
+            transition: 0.3s;
+        }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 20px;
+            color: var(--navy);
+        }
+
+        .logo span {
+            color: var(--red);
+        }
+
+        .nav-badge {
+            font-size: 11px;
+            font-weight: 700;
+            background: var(--gold-light);
+            color: var(--navy);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--gold);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 60px 0 80px;
+            background: radial-gradient(circle at top right, rgba(212,168,67,0.1), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(237,27,45,0.06), transparent 40%);
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .hero-content h1 {
+            font-size: 44px;
+            line-height: 1.15;
+            margin-bottom: 20px;
+        }
+
+        .hero-content h1 em {
+            font-style: normal;
+            color: var(--red);
+        }
+
+        .hero-subtitle {
+            font-size: 17px;
+            color: var(--ink-soft);
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .promo-banner-top {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--gold-light);
+            border: 1px solid var(--gold);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 20px;
+        }
+
+        .hero-features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .hf-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .hf-item span {
+            color: var(--red);
+            font-weight: 800;
+        }
+
+        /* Form Card */
+        .form-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--line);
+            padding: 36px;
+            box-shadow: 0 20px 50px -15px rgba(26,26,46,0.1);
+        }
+
+        .form-card h3 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .form-card p {
+            font-size: 13.5px;
+            color: var(--ink-soft);
+            margin-bottom: 24px;
+        }
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--navy);
+        }
+
+        .field input, .field select, .field textarea {
+            width: 100%;
+            padding: 13px 16px;
+            border: 1.5px solid var(--line);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--navy);
+            background: var(--cream);
+            transition: 0.2s;
+        }
+
+        .field input:focus, .field select:focus, .field textarea:focus {
+            outline: none;
+            border-color: var(--gold);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(212,168,67,0.15);
+        }
+
+        .form-note {
+            font-size: 11.5px;
+            color: var(--ink-soft);
+            margin-top: 16px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* Sections */
+        section {
+            padding: 80px 0;
+        }
+
+        .sec-head {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 50px;
+        }
+
+        .sec-head span {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--red);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .sec-head h2 {
+            font-size: 34px;
+            margin-bottom: 12px;
+        }
+
+        .sec-head p {
+            color: var(--ink-soft);
+            font-size: 15px;
+        }
+
+        /* Highlights / Keistimewaan Grid */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-md);
+            padding: 30px;
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px -12px rgba(26,26,46,0.08);
+        }
+
+        .feature-card .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            background: var(--gold-light);
+            color: var(--navy);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h4 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: var(--ink-soft);
+        }
+
+        .badge-highlight {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--red);
+            color: var(--white);
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        /* Specs Table Section */
+        .specs-box {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 10px 30px -15px rgba(26,26,46,0.05);
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        th {
+            background: var(--cream-2);
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Benefits Accordion / List */
+        .benefits-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .benefit-box {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-md);
+            padding: 24px 28px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .benefit-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--navy);
+            color: var(--white);
+            font-family: 'Fraunces', serif;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+
+        .benefit-content h4 {
+            font-size: 17px;
+            margin-bottom: 6px;
+        }
+
+        .benefit-content p {
+            font-size: 14px;
+            color: var(--ink-soft);
+        }
+
+        /* Floating WhatsApp CTA */
+        .fab-wa {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            background: #25D366;
+            color: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 10px 25px rgba(37,211,102,0.4);
+            z-index: 999;
+            transition: 0.3s;
+        }
+
+        .fab-wa:hover {
+            transform: scale(1.1);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--navy);
+            color: var(--white);
+            padding: 60px 0 30px;
+            font-size: 13.5px;
+        }
+
+        .foot-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 40px;
+        }
+
+        .foot-about p {
+            color: #9CA3AF;
+            margin-top: 12px;
+            max-width: 400px;
+        }
+
+        .foot-links h5 {
+            font-size: 15px;
+            margin-bottom: 16px;
+            color: var(--white);
+        }
+
+        .foot-links ul {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .foot-links a {
+            color: #9CA3AF;
+            transition: 0.2s;
+        }
+
+        .foot-links a:hover {
+            color: var(--white);
+        }
+
+        .foot-copy {
+            text-align: center;
+            color: #9CA3AF;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+            }
+            .grid-3, .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .hero-content h1 {
+                font-size: 32px;
+            }
+            .foot-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="wrap nav-container">
+            <a href="#" class="logo">OneForLife<span>.id</span></a>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="nav-badge">Mitra Resmi Prudential</span>
+                <a href="#konsultasi" class="btn btn-red" style="padding: 10px 20px; font-size: 13px;">Konsultasi Gratis</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="wrap hero-grid">
+            <div class="hero-content">
+                <div class="promo-banner-top">
+                    ✨ Promo Terbatas: Cashback Premi 5% per Polis (Okt 2026)
+                </div>
+                <h1>Asuransi Jiwa <em>PRUProsper</em><br>Kupastikan Jaga Terus Langkah Rencana Kita</h1>
+                <p class="hero-subtitle">
+                    Produk asuransi jiwa tradisional (dwiguna) dalam mata uang USD dari Prudential Indonesia. Memberikan perlindungan jiwa lintas generasi serta Manfaat Tunai Tahunan pasti sebesar 7% untuk menjaga stabilitas keuangan keluarga Anda.
+                </p>
+                <div class="hero-features">
+                    <div class="hf-item"><span>✓</span> Manfaat Tunai 7% / Tahun</div>
+                    <div class="hf-item"><span>✓</span> Masa Bayar Singkat (5 Tahun)</div>
+                    <div class="hf-item"><span>✓</span> Tanpa Cek Medis (GIO 1)</div>
+                    <div class="hf-item"><span>✓</span> Mata Uang USD Stabil</div>
+                </div>
+                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                    <a href="#konsultasi" class="btn btn-red">Ambil Promo & Konsultasi</a>
+                    <a href="https://wa.me/6281285724093?text=Halo%20oneforlife,%20saya%20ingin%20konsultasi%20mengenai%20PRUProsper" target="_blank" class="btn btn-wa">💬 Chat WhatsApp</a>
+                </div>
+            </div>
+
+            <!-- Form Lead Generation -->
+            <div class="form-card" id="konsultasi">
+                <h3>Dapatkan Simulasi & Penawaran</h3>
+                <p>Isi data diri untuk dihubungi oleh konsultan resmi Prudential.</p>
+                <form id="leadForm" action="https://wa.me/6281285724093" method="get" target="_blank">
+                    <div class="field">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="name" placeholder="Nama Sesuai KTP" required>
+                    </div>
+                    <div class="field">
+                        <label>Nomor WhatsApp</label>
+                        <input type="tel" id="phone" placeholder="08xx xxxx xxxx" required>
+                    </div>
+                    <div class="field">
+                        <label>Domisili Kota</label>
+                        <input type="text" id="city" placeholder="Contoh: Jakarta Selatan" required>
+                    </div>
+                    <div class="field">
+                        <label>Waktu Ingin Dihubungi</label>
+                        <select id="time">
+                            <option>08.00 - 11.00</option>
+                            <option>11.00 - 14.00</option>
+                            <option>14.00 - 17.00</option>
+                            <option>17.00 - 20.00</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-red" style="width: 100%;">Kirim Permintaan Konsultasi</button>
+                    <p class="form-note">Dengan menekan tombol di atas, Anda terhubung langsung dengan konsultan resmi Prudential Indonesia via WhatsApp.</p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Keistimewaan Section -->
+    <section style="background: var(--white);">
+        <div class="wrap">
+            <div class="sec-head">
+                <span>Keistimewaan Utama</span>
+                <h2>Mengapa Memilih PRUProsper?</h2>
+                <p>Solusi finansial komprehensif untuk perlindungan keluarga sekaligus perencanaan kekayaan jangka panjang.</p>
+            </div>
+            <div class="grid-3">
+                <div class="feature-card">
+                    <span class="badge-highlight">Pasti</span>
+                    <div class="icon">💵</div>
+                    <h4>Manfaat Tunai Tahunan 7%</h4>
+                    <p>Dibayarkan secara dijamin sebesar 7% dari premi tahunan mulai akhir tahun polis ke-3 hingga akhir masa pertanggungan (tahun ke-15).</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🛡️</div>
+                    <h4>Proteksi Lintas Generasi</h4>
+                    <p>Masa pembayaran premi yang singkat (hanya 5 tahun) untuk masa perlindungan jiwa yang optimal selama 15 tahun penuh dalam mata uang USD.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📈</div>
+                    <h4>Manfaat Akhir Pertanggungan</h4>
+                    <p>Mendapatkan kembali 113% dari seluruh premi yang telah dibayarkan secara sekaligus jika tertanggung hidup hingga akhir masa pertanggungan.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Detail Produk & Spesifikasi -->
+    <section>
+        <div class="wrap">
+            <div class="sec-head">
+                <span>Spesifikasi Produk</span>
+                <h2>Ringkasan Fitur & Ketentuan PRUProsper</h2>
+                <p>Informasi teknis dan persyaratan kepesertaan sesuai ketentuan resmi Prudential Indonesia.</p>
+            </div>
+            
+            <div class="specs-box">
+                <div class="table-responsive">
+                    <table>
+                        <tr>
+                            <th style="width: 35%;">Parameter Produk</th>
+                            <th>Ketentuan Resmi PRUProsper</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Mata Uang</strong></td>
+                            <td>Dolar Amerika Serikat (USD)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Usia Masuk Tertanggung</strong></td>
+                            <td>1 tahun s.d. 65 tahun (ulang tahun berikutnya)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Masa Pembayaran Premi</strong></td>
+                            <td>5 tahun</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Masa Pertanggungan</strong></td>
+                            <td>15 tahun</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ketentuan Premi</strong></td>
+                            <td>Minimum USD2.500/tahun s.d. Maksimum USD200.000/tahun (kelipatan USD100)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Seleksi Risiko</strong></td>
+                            <td>GIO 1 (Guaranteed Issuance Offer / Tanpa pemeriksaan kesehatan sesuai syarat berlaku)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Frekuensi Pembayaran</strong></td>
+                            <td>Tahunan atau Bulanan</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rincian Manfaat -->
+    <section style="background: var(--white);">
+        <div class="wrap">
+            <div class="sec-head">
+                <span>Manfaat Perlindungan</span>
+                <h2>Jaminan Kepastian untuk Keluarga</h2>
+            </div>
+            
+            <div class="benefits-timeline">
+                <div class="benefit-box">
+                    <div class="benefit-number">1</div>
+                    <div class="benefit-content">
+                        <h4>Manfaat Meninggal Dunia</h4>
+                        <p>Apabila tertanggung meninggal dunia dalam masa pertanggungan, Prudential akan membayarkan santunan terbaik (102% - 105% dari total premi atau nilai penebusan yang terbentuk, mana yang lebih besar) tanpa masa tunggu.</p>
+                    </div>
+                </div>
+                <div class="benefit-box">
+                    <div class="benefit-number">2</div>
+                    <div class="benefit-content">
+                        <h4>Manfaat Tunai Tahunan (7%)</h4>
+                        <p>Pencairan tunai otomatis sebesar 7% dari premi tahunan setiap akhir tahun polis ke-3 sampai ke-15 selama polis aktif, menjaga likuiditas finansial Anda.</p>
+                    </div>
+                </div>
+                <div class="benefit-box">
+                    <div class="benefit-number">3</div>
+                    <div class="benefit-content">
+                        <h4>Manfaat Akhir Pertanggungan (113%)</h4>
+                        <p>Kepastian pengembalian sebesar 113% dari seluruh premi yang telah dibayarkan secara sekaligus pada akhir tahun polis ke-15 jika tertanggung tetap hidup.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Footer Banner -->
+    <section style="background: linear-gradient(135deg, var(--navy) 0%, #11111F 100%); color: var(--white); text-align: center;">
+        <div class="wrap" style="max-width: 800px;">
+            <span style="color: var(--gold); font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-size: 13px; display: block; margin-bottom: 12px;">Mulai Perencanaan Finansial Anda Hari Ini</span>
+            <h2 style="color: var(--white); font-size: 36px; margin-bottom: 16px;">Wujudkan Masa Depan Aman Bersama PRUProsper</h2>
+            <p style="color: #9CA3AF; margin-bottom: 32px; font-size: 16px;">Konsultasikan kebutuhan proteksi dan simulasi premi USD Anda dengan agen profesional resmi kami.</p>
+            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+                <a href="#konsultasi" class="btn btn-red">Hubungi Konsultan Sekarang</a>
+                <a href="https://wa.me/6281285724093?text=Halo%20oneforlife,%20saya%20ingin%20diskusi%20lebih%20lanjut%20tentang%20PRUProsper" target="_blank" class="btn btn-wa">💬 Tanya via WhatsApp</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="wrap">
+            <div class="foot-grid">
+                <div class="foot-about">
+                    <a href="#" class="logo" style="color: var(--white);">OneForLife<span>.id</span></a>
+                    <p>Platform informasi dan konsultasi produk asuransi resmi mitra Prudential Indonesia untuk perlindungan finansial keluarga terbaik.</p>
+                </div>
+                <div class="foot-links">
+                    <h5>Produk Terkait</h5>
+                    <ul>
+                        <li><a href="#">PRUProsper</a></li>
+                        <li><a href="#">PRUFuture</a></li>
+                        <li><a href="#">PRUWell Medical</a></li>
+                        <li><a href="#">PRUSmart Plan</a></li>
+                    </ul>
+                </div>
+                <div class="foot-links">
+                    <h5>Legal & Resmi</h5>
+                    <ul>
+                        <li><a href="https://www.prudential.co.id" target="_blank">Prudential Indonesia</a></li>
+                        <li><a href="#">Kebijakan Privasi</a></li>
+                        <li><a href="#">Syarat & Ketentuan</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="foot-copy">
+                <p>PT Prudential Life Assurance berizin dan diawasi oleh Otoritas Jasa Keuangan (OJK). Website ini dikelola oleh Mitra Pemasar Resmi OneForLife.id.</p>
+                <p style="margin-top: 8px;">Hak Cipta &copy; 2026 OneForLife.id — All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/6281285724093?text=Halo%20oneforlife,%20saya%20ingin%20konsultasi%20PRUProsper" target="_blank" class="fab-wa" title="Konsultasi WhatsApp">
+        💬
+    </a>
+
+    <!-- Simple Script for Form WhatsApp Redirect -->
+    <script>
+        document.getElementById('leadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const city = document.getElementById('city').value;
+            const time = document.getElementById('time').value;
+
+            const text = `Halo OneForLife, saya tertarik dengan produk *PRUProsper* Prudential.\n\nData Diri:\n- Nama: ${name}\n- No. WhatsApp: ${phone}\n- Domisili: ${city}\n- Waktu Dihubungi: ${time}\n\nMohon info simulasi dan detail lebih lanjut. Terima kasih.`;
+            const encodedText = encodeURIComponent(text);
+            window.open(`https://wa.me/6281285724093?text=${encodedText}`, '_blank');
+        });
+    </script>
+</body>
+</html>
